@@ -76,7 +76,7 @@ CLEAN := -f $(SRC_PATH)/mk/clean.mk SUB
 export BUILD CLEAN
 
 # Do not add any directories containing no makefiles.
-BUILD_DIRS := sys lib dev
+BUILD_DIRS := sys lib dev demo
 BUILD_OBJS := $(addsuffix /ar.a,$(BUILD_DIRS))
 
 BUILD_DIRS := $(sort $(BUILD_DIRS))

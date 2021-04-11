@@ -59,7 +59,7 @@ void main(unsigned long dtb_addr)
 	fdtn_free((struct fdt_node *)fdt);
 	if (err) goto err0;
 
-	//err = demo_run();
+	err = demo_run();
 	if (err) goto err0;
 	return;
 err0:
