@@ -10,7 +10,7 @@
 #include <sys/err.h>
 #include <sys/mmu.h>
 #include <sys/vmm.h>
-#include <sys/mutex.h>
+#include <sys/spinlock.h>
 
 #define CON_BUF_LEN			256
 
@@ -20,7 +20,7 @@ struct con_regs {
 	uint32_t			flag;
 };
 
-static struct mutex g_con_mutex;
+static struct spin_lock g_con_lock;
 static int g_con_init;
 static volatile struct con_regs *g_con_regs;
 
@@ -46,12 +46,13 @@ int con_out(const char *fmt, ...)
 	if (!g_con_init)
 		return ERR_UNSUP;
 
-	mutex_lock(&g_con_mutex);
+	spin_lock(&g_con_lock);
 	va_start(ap, fmt);
 	len = vsnprintf(g_con_buf, CON_BUF_LEN, fmt, ap);
 	va_end(ap);
-	assert(len >= 0 && len < CON_BUF_LEN);
-	assert(g_con_buf[len] == 0);
+
+	if (len < 0 || len >= CON_BUF_LEN || g_con_buf[len])
+		return ERR_INSUFF_BUFFER;
 
 	// Append a \n. For Minicom, enable addcarreturn option.
 	if (len == CON_BUF_LEN - 1)
@@ -59,10 +60,9 @@ int con_out(const char *fmt, ...)
 	g_con_buf[len] = '\n';
 	g_con_buf[len + 1] = 0;
 	len += 1;
-	assert(len < CON_BUF_LEN);
 
 	_con_out(g_con_buf, len);
-	mutex_unlock(&g_con_mutex);
+	spin_unlock(&g_con_lock);
 	return len;
 }
 
@@ -75,7 +75,7 @@ int con_init()
 	vpn_t page;
 	pfn_t frame;
 
-	mutex_init(&g_con_mutex);
+	spin_lock_init(&g_con_lock, IPL_HARD);
 
 	pa = UART_BASE;
 	frame = pa_to_pfn(pa);
