@@ -37,8 +37,8 @@ struct mbox_msg_set_dom_state {
 	struct mbox_msg			msg;
 	struct mbox_msg_tag		msg_tag;
 	struct {
-		uint32_t		domain;
-		uint32_t		is_on;
+		uint32_t		dom;
+		int			is_on;
 	} buf;
 	uint32_t			end_tag;
 };
@@ -127,6 +127,44 @@ int mbox_ioq_res(struct ior *ior)
 	if ((t->data_size & 0x80000000ul) && size == t->buf_size)
 		err = ERR_SUCCESS;
 err0:
+	return err;
+}
+
+// IPL_THREAD
+int mbox_set_dom_state(int dom, int is_on)
+{
+	int err;
+	size_t size;
+	struct ior ior;
+	struct mbox_msg_set_dom_state *m;
+	pa_t pa;
+	int	slabs_va_to_pa(void *va, pa_t *pa);
+
+	size = align_up(sizeof(*m), 16);
+	m = malloc(size);
+	if (m == NULL)
+		return ERR_NO_MEM;
+	err = slabs_va_to_pa(m, &pa);
+	if (err)
+		return err;
+
+	is_on = !!is_on;
+	m->msg.size = size;
+	m->msg.code = 0;
+	m->msg_tag.id = MBOX_TAG_SET_DOM_STATE;
+	m->msg_tag.buf_size = sizeof(m->buf);
+	m->msg_tag.data_size = 0;
+	m->buf.dom = dom;
+	m->buf.is_on = is_on;
+	m->end_tag = 0;
+
+	ior_init(&ior, &g_mbox_ioq, 0, m, pa);
+	err = ioq_queue_ior(&ior);
+	if (!err)
+		err = ior_wait(&ior);
+	if (!err && m->buf.is_on != is_on)
+		err = ERR_FAILED;
+	free(m);
 	return err;
 }
 
