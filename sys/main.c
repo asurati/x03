@@ -59,8 +59,6 @@ int kmain()
 	if (err)
 		goto err;
 
-	con_out("x05");
-
 	err = intc_init();
 	if (err)
 		return err;
