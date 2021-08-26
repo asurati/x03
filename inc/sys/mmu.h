@@ -141,6 +141,12 @@ ba_t pa_to_ba(pa_t pa)
 	return pa | 0x40000000ul;
 }
 
+static inline
+ba_t va_to_ba(va_t va)
+{
+	return pa_to_ba(va_to_pa(va));
+}
+
 int mmu_map_page(int pid, vpn_t page, pfn_t frame, enum align_bits align,
 		 int flags);
 
