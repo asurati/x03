@@ -84,7 +84,7 @@ int v3d_ioq_res(struct ior *ior)
 }
 
 // IPL_THREAD
-int v3d_run_prog(pa_t code_pa, pa_t unif_pa, size_t unif_size)
+int v3d_run_prog(ba_t code_ba, ba_t unif_ba, size_t unif_size)
 {
 	int err;
 	struct ior ior;
@@ -93,8 +93,8 @@ int v3d_run_prog(pa_t code_pa, pa_t unif_pa, size_t unif_size)
 	rp = malloc(sizeof(*rp));
 	if (rp == NULL)
 		return ERR_NO_MEM;
-	rp->code_ba = pa_to_ba(code_pa);
-	rp->unif_ba = pa_to_ba(unif_pa);
+	rp->code_ba = code_ba;
+	rp->unif_ba = unif_ba;
 	rp->unif_size = unif_size;
 
 	ior_init(&ior, &g_v3d_ioq, 0, rp, 0);
