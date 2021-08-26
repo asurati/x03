@@ -17,6 +17,6 @@ int d1_run()
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
 	};
-	err = v3d_run_prog(va_to_pa((va_t)code), 0, 0);
+	err = v3d_run_prog(va_to_ba((va_t)code), 0, 0);
 	return err;
 }
