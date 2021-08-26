@@ -27,6 +27,7 @@ static volatile struct intc_regs *g_intc_regs;
 struct irq_info {
 	int				reg_enable;
 	int				reg_disable;
+	int				reg_pending;
 	uint32_t			mask;
 };
 
@@ -34,18 +35,21 @@ static struct irq_info g_irqs[NUM_IRQS] = {
 	[IRQ_TIMER3] = {
 		offsetof(struct intc_regs, irq1_enable) / 4,
 		offsetof(struct intc_regs, irq1_disable) / 4,
+		offsetof(struct intc_regs, irq1_pending) / 4,
 		1ul << 3
 	},
 
 	[IRQ_VC_3D] = {
 		offsetof(struct intc_regs, irq1_enable) / 4,
 		offsetof(struct intc_regs, irq1_disable) / 4,
+		offsetof(struct intc_regs, irq1_pending) / 4,
 		1ul << 10
 	},
 
 	[IRQ_ARM_MAILBOX] = {
 		offsetof(struct intc_regs, irq0_enable) / 4,
 		offsetof(struct intc_regs, irq0_disable) / 4,
+		offsetof(struct intc_regs, irq0_pending) / 4,
 		1ul << 1
 	}
 };
@@ -112,15 +116,18 @@ int intc_disable_irq(enum irq irq)
 
 uint32_t intc_get_pending()
 {
+	int i;
 	uint32_t mask;
+	struct irq_info *ii;
+	volatile uint32_t *regs;
 
+	regs = (volatile uint32_t *)g_intc_regs;
 	mask = 0;
 
-	if (g_intc_regs->irq0_pending & (1ul << 1))
-		mask |= 1ul << IRQ_ARM_MAILBOX;
-	if (g_intc_regs->irq1_pending & (1ul << 3))
-		mask |= 1ul << IRQ_TIMER3;
-	if (g_intc_regs->irq1_pending & (1ul << 10))
-		mask |= 1ul << IRQ_VC_3D;
+	for (i = 0; i < NUM_IRQS; ++i) {
+		ii = &g_irqs[i];
+		if (regs[ii->reg_pending] & ii->mask)
+			mask |= 1ul << i;
+	}
 	return mask;
 }
