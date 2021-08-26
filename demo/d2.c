@@ -125,7 +125,6 @@ int d2_run()
 	unif_ba = va_to_ba((va_t)unif);
 	dc_cvac(in_buf, sizeof(in_buf));
 	dc_cvac(unif, sizeof(unif));
-	dc_civac(out_buf, sizeof(out_buf));
 	dsb();
 
 	err = v3d_run_prog(code_ba, unif_ba, sizeof(unif));
