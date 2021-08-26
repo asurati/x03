@@ -173,6 +173,26 @@ void dc_civac(void *p, size_t size)
 }
 
 static inline
+void _dc_ivac(va_t va)
+{
+	__asm volatile ("mcr	p15, 0, %0, c7, c6, 1" :: "r"(va));
+}
+
+static inline
+void dc_ivac(void *p, size_t size)
+{
+	va_t start, end;
+
+	start = (va_t)p;
+	end = start + size;
+	start = align_down(start, 32);
+	end = align_up(end, 32);
+
+	for (; start < end; start += 32)
+		_dc_ivac(start);
+}
+
+static inline
 void _dc_cvac(va_t va)
 {
 	__asm volatile ("mcr	p15, 0, %0, c7, c10, 1" :: "r"(va));
