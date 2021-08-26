@@ -98,7 +98,7 @@ export BUILD CLEAN
 # Do not add any directories containing no makefiles.
 
 LDR_DIRS := ldr
-SYS_DIRS := sys lib dev
+SYS_DIRS := sys lib dev demo
 
 BUILD_DIRS := $(LDR_DIRS) $(SYS_DIRS)
 

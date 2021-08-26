@@ -14,6 +14,7 @@
 
 #include <dev/con.h>
 #include <dev/mbox.h>
+#include <dev/v3d.h>
 
 int kmain()
 {
@@ -24,6 +25,8 @@ int kmain()
 	int	mmu_post_init(va_t sys_end);
 	int	intc_init();
 	int	mbox_init();
+	int	v3d_init();
+	int	demo_run();
 
 	sys_end = (va_t)&_sys_end;
 	sys_end = align_up(sys_end, 8);
@@ -71,6 +74,14 @@ int kmain()
 	if (err)
 		return err;
 	con_out("rev %x", rev);
+
+	err = v3d_init();
+	if (err)
+		return err;
+
+	err = demo_run();
+	if (err)
+		return err;
 err:
 	return err;
 }
