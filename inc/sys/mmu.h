@@ -21,6 +21,7 @@
 
 typedef uint32_t			pa_t;
 typedef uint32_t			va_t;
+typedef uint32_t			ba_t;
 typedef uint32_t			pde_t;
 typedef int32_t				vpn_t;
 typedef int32_t				pfn_t;
@@ -59,6 +60,7 @@ typedef int32_t				pfn_t;
 #define UART_BASE			(IO_BASE + 0x201000)
 #define INTC_BASE			(IO_BASE + 0xb200)
 #define MBOX_BASE			(IO_BASE + 0xb880)
+#define V3D_BASE			(IO_BASE + 0xc00000)
 
 #define PAGE_SIZE			(1ul << PAGE_SIZE_BITS)
 
@@ -133,7 +135,7 @@ pa_t ram_map_va_to_pa(va_t va)
 }
 
 static inline
-pa_t pa_to_ba(pa_t pa)
+ba_t pa_to_ba(pa_t pa)
 {
 	return pa | 0x40000000ul;
 }
