@@ -61,6 +61,7 @@ typedef int32_t				pfn_t;
 #define INTC_BASE			(IO_BASE + 0xb200)
 #define MBOX_BASE			(IO_BASE + 0xb880)
 #define V3D_BASE			(IO_BASE + 0xc00000)
+#define TIMER_BASE			(IO_BASE + 0x3000)
 
 #define PAGE_SIZE			(1ul << PAGE_SIZE_BITS)
 

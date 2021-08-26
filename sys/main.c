@@ -24,6 +24,7 @@ int kmain()
 	int	mmu_init(va_t *sys_end);
 	int	mmu_post_init(va_t sys_end);
 	int	intc_init();
+	int	tmr_init();
 	int	mbox_init();
 	int	v3d_init();
 	int	demo_run();
@@ -63,6 +64,10 @@ int kmain()
 		goto err;
 
 	err = intc_init();
+	if (err)
+		return err;
+
+	err = tmr_init();
 	if (err)
 		return err;
 
