@@ -9,29 +9,27 @@
 #include <dev/tmr.h>
 #include <dev/con.h>
 
-// Store vertically, in two columns, with each column consisting of 4
-// 16-element vectors.
-// v0.0 (y=0,x=0)      v4 (y=0,x=1)
+// v0.0 (y=0,x=15)
 // v0.1
 // ...
 // v0.15
 //
-// v1.0 (y=16,x=0)     v5 (y=16,x=2)
+// v1.0 (y=16,x=15)
 // v1.1
 // ...
 // v1.15
 //
-// v2.0 (y=32,x=0)     v6
+// v2.0 (y=32,x=15)
 // v2.1
 // .
 // v2.15
 //
-// v3.0 (y=48,x=0)     v7
+// v3.0 (y=48,x=15)
 // v3.1
 // .
 // v3.15
 //
-// Total 128 words.
+// Total 64 words.
 
 static
 uint32_t d2_get_vdw_setup(int y, int x)
