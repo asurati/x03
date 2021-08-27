@@ -72,7 +72,7 @@ int d2_run()
 		0x00000000, 0xe00248a7,
 
 		0x0d9e7680, 0x10022827,
-		0x00000050, 0xf02809e7,
+		0x00000038, 0xf02809e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
@@ -80,14 +80,11 @@ int d2_run()
 		0x15800dc0, 0xd0020827,
 		0x15800dc0, 0xd0020867,
 		0x159e7000, 0x10021c67,
+
+		0xffffffa0, 0xf0f809e7,
 		0x159e7240, 0x10021ca7,
 		0x159f2e00, 0x100209e7,
 		0x0c9c15c0, 0xd00208a7,
-
-		0xffffff88, 0xf0f809e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
 
 		0x159c1fc0, 0xd00209a7,
 		0x009e7000, 0x300009e7,
@@ -152,11 +149,12 @@ b.z	done;
 ori	r0, uni_rd, 0;
 ori	r1, uni_rd, 0;
 or	vpm_wr_setup, r0, r0;
+b	loop;
+# The below 3 instructions belong to the delay slot of the branch instruction.
+# They are always executed.
 or	vpm_st_addr, r1, r1;
 or	-, vpm_st_wait, r0;
 addi	r2, r2, 1;
-b	loop;
-;;;
 
 done:
 ori	host_int, 1, 1;
