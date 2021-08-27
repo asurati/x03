@@ -132,9 +132,9 @@ int d2_run()
 #if 0
 ori	r0, uni_rd, 0;
 ori	r1, uni_rd, 0;
-or	vpm_rd_setup, r0, r0;
-or	vpm_ld_addr, r1, r1;
-or	-, vpm_ld_wait, r0;
+or	vdr_setup, r0, r0;
+or	vdr_addr, r1, r1;
+or	-, vdr_wait, r0;
 
 #r2 is the index
 #r3 is the limit
@@ -148,12 +148,12 @@ b.z	done;
 ;;;
 ori	r0, uni_rd, 0;
 ori	r1, uni_rd, 0;
-or	vpm_wr_setup, r0, r0;
+or	vdw_setup, r0, r0;
 b	loop;
 # The below 3 instructions belong to the delay slot of the branch instruction.
 # They are always executed.
-or	vpm_st_addr, r1, r1;
-or	-, vpm_st_wait, r0;
+or	vdw_addr, r1, r1;
+or	-, vdw_wait, r0;
 addi	r2, r2, 1;
 
 done:
