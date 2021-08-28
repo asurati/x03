@@ -80,7 +80,7 @@ int d3_run()
 	vpw |= bits_set(VPW_SIZE, 2);
 	unif[3] = vpw;
 
-	// RAM->VPM the vector from (y=48,x=15)
+	// VPM->RAM the vector from (y=48,x=15)
 	vdw = 0;
 	vdw |= bits_set(VDW_ADDR_Y, 48);
 	vdw |= bits_set(VDW_ADDR_X, 15);
