@@ -93,6 +93,7 @@
 
 // VPW: Write into VPM from QPU.
 // This operation always writes one full 16-element vector.
+// A single setup works for multiple writes because of the STRIDE property.
 #define VPW_V32_ADDR_X_POS		VPR_V32_ADDR_X_POS
 #define VPW_V32_ADDR_Y_POS		VPR_V32_ADDR_Y_POS
 #define VPW_SIZE_POS			VPR_SIZE_POS
