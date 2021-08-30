@@ -66,7 +66,7 @@
 #define VDW_ADDR_X_POS			3
 #define VDW_ADDR_Y_POS			7
 #define VDW_HORIZ_POS			14
-#define VDW_DEPTH_POS			16
+#define VDW_DEPTH_POS			16	// In the units of width
 #define VDW_UNITS_POS			23
 #define VDW_ID_POS			30
 #define VDW_ADDR_X_BITS			4
