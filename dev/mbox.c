@@ -13,6 +13,8 @@
 #define MBOX_TAG_GET_FW_REV		1ul
 #define MBOX_TAG_SET_DOM_STATE		0x38030ul
 
+int	slabs_va_to_pa(void *va, pa_t *pa);
+
 struct mbox_msg {
 	uint32_t			size;
 	uint32_t			code;
@@ -138,7 +140,6 @@ int mbox_set_dom_state(int dom, int is_on)
 	struct ior ior;
 	struct mbox_msg_set_dom_state *m;
 	pa_t pa;
-	int	slabs_va_to_pa(void *va, pa_t *pa);
 
 	size = align_up(sizeof(*m), 16);
 	m = malloc(size);
@@ -176,7 +177,6 @@ int mbox_get_fw_rev(int *out)
 	struct ior ior;
 	struct mbox_msg_get_fw_rev *m;
 	pa_t pa;
-	int	slabs_va_to_pa(void *va, pa_t *pa);
 
 	size = align_up(sizeof(*m), 16);
 	m = malloc(size);
