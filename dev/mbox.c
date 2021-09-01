@@ -92,12 +92,11 @@ void mbox_sw_irqh()
 static
 int mbox_ioq_req(struct ior *ior)
 {
-	pa_t pa;
+	ba_t ba;
 	struct mbox_msg *m;
 
 	m = ior_param(ior);
-	pa = ior_param_pa(ior);
-	pa = pa_to_ba(pa) | 8;	// Channel: ArmReq, VCRes
+	ba = pa_to_ba(ior_param_pa(ior));
 	dc_civac(m, m->size);
 	dsb();
 
@@ -106,7 +105,7 @@ int mbox_ioq_req(struct ior *ior)
 			continue;
 		break;
 	}
-	g_mbox_regs->a2v_write = pa;
+	g_mbox_regs->a2v_write = ba;
 	return ERR_SUCCESS;
 }
 
@@ -159,7 +158,7 @@ int mbox_set_dom_state(int dom, int is_on)
 	m->buf.is_on = is_on;
 	m->end_tag = 0;
 
-	ior_init(&ior, &g_mbox_ioq, 0, m, pa);
+	ior_init(&ior, &g_mbox_ioq, 0, m, pa | 8);
 	err = ioq_queue_ior(&ior);
 	if (!err)
 		err = ior_wait(&ior);
@@ -193,7 +192,7 @@ int mbox_get_fw_rev(int *out)
 	m->msg_tag.data_size = 0;
 	m->end_tag = 0;
 
-	ior_init(&ior, &g_mbox_ioq, 0, m, pa);
+	ior_init(&ior, &g_mbox_ioq, 0, m, pa | 8);
 	err = ioq_queue_ior(&ior);
 	if (!err)
 		err = ior_wait(&ior);
