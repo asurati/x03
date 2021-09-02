@@ -36,9 +36,9 @@ int bitmap_on_off(struct bitmap *map, int start, int num_bits, char is_on)
 	bit = start & 0x3f;
 	for (i = 0; i < num_bits; ++i) {
 		if (is_on)
-			map->buf[ix] |= 1ul << bit;
+			map->buf[ix] |= 1ull << bit;
 		else
-			map->buf[ix] &= ~(1ul << bit);
+			map->buf[ix] &= ~(1ull << bit);
 		bit = (bit + 1) & 0x3f;
 		if (bit == 0)
 			++ix;
@@ -63,7 +63,7 @@ int bitmap_is_on_off(const struct bitmap *map, int start, int num_bits,
 	ix = start >> 6;
 	bit = start & 0x3f;
 	for (i = 0; i < num_bits; ++i) {
-		val = map->buf[ix] & (1ul << bit);
+		val = map->buf[ix] & (1ull << bit);
 
 		if (is_on && val == 0)
 			return ERR_UNEXP;
@@ -99,7 +99,7 @@ int bitmap_find_on_off(const struct bitmap *map, int align, int start,
 		ix = start >> 6;
 		bit = start & 0x3f;
 		for (i = 0; i < num_bits && start + i < map->num_bits; ++i) {
-			val = map->buf[ix] & (1ul << bit);
+			val = map->buf[ix] & (1ull << bit);
 
 			if (is_on && val == 0)
 				break;
