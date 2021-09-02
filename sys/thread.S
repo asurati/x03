@@ -8,8 +8,10 @@
 .type		thread_switch, %function
 thread_switch:
 	// Save the stack pointer into the curr thread structure.
-	mov	r2, sp
-	str	r2, [r0], #4
+	str	sp, [r0], #4
+
+	// Save the LR into the curr thread structure.
+	str	lr, [r0], #4
 
 	// Save into the curr thread structure
 	str	r4, [r0], #4
@@ -22,8 +24,8 @@ thread_switch:
 
 	// Switch to the next thread.
 	mov	r0, r1	// Also the return value.
-	ldr	r2, [r0], #4
-	mov	sp, r2
+	ldr	sp, [r0], #4
+	ldr	lr, [r0], #4
 
 	// Restore registers.
 	ldr	r4, [r0], #4
@@ -34,7 +36,16 @@ thread_switch:
 	ldr	r10, [r0], #4
 	ldr	r11, [r0], #4
 
-	// Assuming that thread_switch is called from a single location.
-	// So the LR register doesn't need to be preserved.
 	bx	lr
 .size		thread_switch, . - thread_switch
+
+.global		thread_enter
+.type		thread_enter, %function
+thread_enter:
+	mov	lr, r4
+	mov	r0, r5
+	bx	lr
+.Lsink:
+	wfi
+	b	.Lsink
+.size		thread_enter, . - thread_enter

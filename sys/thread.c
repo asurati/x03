@@ -2,11 +2,13 @@
 // Copyright (c) 2021 Amol Surati
 
 #include <lib/assert.h>
+#include <lib/stdlib.h>
 
 #include <sys/cpu.h>
 #include <sys/err.h>
 #include <sys/list.h>
-#include <sys/mmu.h>
+#include <sys/pmm.h>
+#include <sys/vmm.h>
 #include <sys/thread.h>
 
 int thread_idle_thread()
@@ -24,6 +26,60 @@ int thread_idle_thread()
 
 	for (;;)
 		cpu_yield();
+}
+
+// IPL_THREAD
+int thread_create(fn_thread *fn, void *p, struct thread **out)
+{
+	int err;
+	struct thread *t;
+	vpn_t page;
+	pfn_t frame;
+	va_t va;
+	reg_t mask;
+	enum ipl prev_ipl;
+	struct list_head *rq;
+	void	thread_enter();
+
+	err = ERR_NO_MEM;
+	t = malloc(sizeof(*t));
+	if (t == NULL)
+		goto err0;
+
+	err = pmm_alloc(ALIGN_PAGE, 1, &frame);
+	if (err)
+		goto err1;
+
+	err = vmm_alloc(ALIGN_PAGE, 1, &page);
+	if (err)
+		goto err2;
+
+	err = mmu_map_page(0, page, frame, ALIGN_PAGE, PROT_RW);
+	if (err)
+		goto err3;
+
+	va = vpn_to_va(page);
+	va += PAGE_SIZE;
+	t->regs[0] = va;			// sp
+	t->regs[1] = (va_t)thread_enter;	// lr
+	t->regs[2] = (va_t)fn;			// r4
+	t->regs[3] = (va_t)p;			// r5
+	t->state = THREAD_STATE_READY;
+
+	prev_ipl = cpu_raise_ipl(IPL_SCHED, &mask);
+	rq = cpu_get_ready_queue();
+	list_add_tail(rq, &t->wait_entry);
+	cpu_lower_ipl(prev_ipl, mask);
+	*out = t;
+	return ERR_SUCCESS;
+err3:
+	vmm_free(page, 1);
+err2:
+	pmm_free(frame, 1);
+err1:
+	free(t);
+err0:
+	return err;
 }
 
 // Called at IPL_SCHED
