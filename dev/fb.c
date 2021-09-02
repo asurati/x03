@@ -11,6 +11,11 @@ static pa_t g_fb_base;
 static size_t g_fb_size;
 volatile uint32_t *g_fb;
 
+volatile uint32_t *fb_get()
+{
+	return g_fb;
+}
+
 static
 int fb_map()
 {
