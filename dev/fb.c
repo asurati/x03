@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2021 Amol Surati
 
-#include <lib/assert.h>
-#include <lib/stdlib.h>
-#include <lib/string.h>
-
 #include <sys/err.h>
 #include <sys/cpu.h>
-#include <sys/mmu.h>
-#include <sys/pmm.h>
-#include <sys/slab.h>
 #include <sys/vmm.h>
 
-#include <dev/con.h>
 #include <dev/mbox.h>
-#include <dev/v3d.h>
 
 static pa_t g_fb_base;
 static size_t g_fb_size;
@@ -24,7 +15,6 @@ static
 int fb_map()
 {
 	int num_pages, i, err;
-	va_t va;
 	vpn_t pages, page;
 	pfn_t frame;
 	size_t size;
@@ -43,9 +33,7 @@ int fb_map()
 		if (err)
 			goto err1;
 	}
-	va = vpn_to_va(pages);
-	va += g_fb_base & (PAGE_SIZE - 1);
-	g_fb = (volatile uint32_t *)va;
+	g_fb = (volatile uint32_t *)vpn_to_va(pages);
 	return ERR_SUCCESS;
 err1:
 	for (--i, --page; i >= 0; --i, --page)
