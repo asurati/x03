@@ -87,7 +87,6 @@ int kmain()
 	if (err)
 		return err;
 
-#if 0
 	err = v3d_init();
 	if (err)
 		return err;
@@ -95,7 +94,6 @@ int kmain()
 	err = demo_run();
 	if (err)
 		return err;
-#endif
 err:
 	return err;
 	(void)fb_base;
