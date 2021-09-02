@@ -39,6 +39,36 @@ struct mbox_tag_set_dom_state {
 	} buf;
 };
 
+struct mbox_tag_fb_set_depth {
+	struct mbox_tag			tag;
+	struct {
+		uint32_t		bpp;
+	} buf;
+};
+
+struct mbox_tag_fb_set_dim {
+	struct mbox_tag			tag;
+	struct {
+		uint32_t		width;
+		uint32_t		height;
+	} buf;
+};
+
+struct mbox_tag_fb_alloc {
+	struct mbox_tag			tag;
+	struct {
+		uint32_t		base;
+		uint32_t		size;
+	} buf;
+};
+
+struct mbox_tag_fb_free {
+	struct mbox_tag			tag;
+	struct {
+		uint32_t		base;
+	} buf;
+};
+
 struct mbox {
 	uint32_t			rw;
 	uint32_t			res[3];
@@ -103,6 +133,98 @@ int mbox_recv(struct mbox_msg *m, pa_t pa)
 		t = (struct mbox_tag *)((char *)(t + 1) + t->buf_size);
 	}
 	return ERR_SUCCESS;
+}
+
+// IPL_THREAD
+int mbox_free_fb(pa_t base)
+{
+	int err;
+	size_t size;
+	struct mbox_tag_fb_free *t;
+	struct mbox_msg *m;
+	pa_t pa;
+
+	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
+	size = align_up(size, 16);
+	m = malloc(size);
+	if (m == NULL)
+		return ERR_NO_MEM;
+	err = slabs_va_to_pa(m, &pa);
+	if (err)
+		goto err0;
+
+	memset(m, 0, size);
+	m->size = size;
+
+	t = (struct mbox_tag_fb_free *)(m + 1);
+
+	t->tag.id = 0x48001;
+	t->tag.buf_size = sizeof(t->buf);
+	t->buf.base = base;
+
+	mbox_send(m, pa | 8);
+	err = mbox_recv(m, pa | 8);
+err0:
+	free(m);
+	return err;
+}
+
+// IPL_THREAD
+int mbox_alloc_fb(pa_t *out_base, size_t *out_size)
+{
+	int err;
+	size_t size;
+	struct mbox_tag_fb_set_depth *td;
+	struct mbox_tag_fb_set_dim *tp, *tv;
+	struct mbox_tag_fb_alloc *ta;
+	struct mbox_msg *m;
+	pa_t pa;
+
+	size = sizeof(*td) + sizeof (*tp) + sizeof(*tv) + sizeof(*ta);
+	size += sizeof(*m) + sizeof(uint32_t);
+	size = align_up(size, 16);
+	m = malloc(size);
+	if (m == NULL)
+		return ERR_NO_MEM;
+	err = slabs_va_to_pa(m, &pa);
+	if (err)
+		goto err0;
+
+	memset(m, 0, size);
+	m->size = size;
+
+	tp = (struct mbox_tag_fb_set_dim *)(m + 1);
+	tv = (struct mbox_tag_fb_set_dim *)(tp + 1);
+	td = (struct mbox_tag_fb_set_depth *)(tv + 1);
+	ta = (struct mbox_tag_fb_alloc *)(td + 1);
+
+	tp->tag.buf_size = sizeof(tp->buf);
+	tv->tag.buf_size = sizeof(tv->buf);
+	td->tag.buf_size = sizeof(td->buf);
+	ta->tag.buf_size = sizeof(ta->buf);
+
+	tp->tag.id = 0x48003;
+	tp->buf.width = 1280;
+	tp->buf.height = 720;
+
+	*tv = *tp;
+	tv->tag.id = 0x48004;
+
+	td->tag.id = 0x48005;
+	td->buf.bpp = 32;
+
+	ta->tag.id = 0x40001;
+	ta->buf.base = PAGE_SIZE;
+
+	mbox_send(m, pa | 8);
+	err = mbox_recv(m, pa | 8);
+	if (err)
+		goto err0;
+	*out_base = ta->buf.base;
+	*out_size = ta->buf.size;
+err0:
+	free(m);
+	return err;
 }
 
 // IPL_THREAD

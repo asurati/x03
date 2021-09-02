@@ -19,6 +19,8 @@
 int kmain()
 {
 	int err, rev;
+	pa_t fb_base;
+	size_t fb_size;
 	va_t sys_end;
 	extern char _sys_end;
 	int	mmu_init(va_t *sys_end);
@@ -26,6 +28,7 @@ int kmain()
 	int	intc_init();
 	int	tmr_init();
 	int	mbox_init();
+	int	fb_init();
 	int	v3d_init();
 	int	demo_run();
 
@@ -80,6 +83,11 @@ int kmain()
 		return err;
 	con_out("rev %x", rev);
 
+	err = fb_init();
+	if (err)
+		return err;
+
+#if 0
 	err = v3d_init();
 	if (err)
 		return err;
@@ -87,6 +95,9 @@ int kmain()
 	err = demo_run();
 	if (err)
 		return err;
+#endif
 err:
 	return err;
+	(void)fb_base;
+	(void)fb_size;
 }
