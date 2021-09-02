@@ -3,132 +3,106 @@
 
 #include <lib/assert.h>
 #include <lib/stdlib.h>
+#include <lib/string.h>
 
 #include <sys/err.h>
 #include <sys/vmm.h>
-#include <sys/spinlock.h>
+#include <sys/cpu.h>
 
-#include <dev/ioq.h>
-
-#define MBOX_TAG_GET_FW_REV		1ul
-#define MBOX_TAG_SET_DOM_STATE		0x38030ul
+#include <dev/con.h>
 
 int	slabs_va_to_pa(void *va, pa_t *pa);
+
+struct mbox_tag {
+	uint32_t			id;
+	uint32_t			buf_size;
+	uint32_t			code;
+};
 
 struct mbox_msg {
 	uint32_t			size;
 	uint32_t			code;
 };
 
-struct mbox_msg_tag {
-	uint32_t			id;
-	uint32_t			buf_size;
-	uint32_t			data_size;
-};
-
-struct mbox_msg_get_fw_rev {
-	struct mbox_msg			msg;
-	struct mbox_msg_tag		msg_tag;
+struct mbox_tag_get_fw_rev {
+	struct mbox_tag			tag;
 	struct {
 		uint32_t		rev;
 	} buf;
-	uint32_t			end_tag;
 };
 
-struct mbox_msg_set_dom_state {
-	struct mbox_msg			msg;
-	struct mbox_msg_tag		msg_tag;
+struct mbox_tag_set_dom_state {
+	struct mbox_tag			tag;
 	struct {
 		uint32_t		dom;
 		int			is_on;
 	} buf;
-	uint32_t			end_tag;
 };
 
-struct mbox_regs {
-	uint32_t			v2a_read;
-	uint32_t			res0[3];
-	uint32_t			v2a_peek;
-	uint32_t			v2a_sender;
-	uint32_t			v2a_status;
-	uint32_t			v2a_config;
-	uint32_t			a2v_write;
-	uint32_t			res1[5];
-	uint32_t			a2v_status;
+struct mbox {
+	uint32_t			rw;
+	uint32_t			res[3];
+	uint32_t			peek;
+	uint32_t			sender;
+	uint32_t			status;
+	uint32_t			config;
 };
 
-#define MBOX_V2ACFG_DIRQ_ENABLE_POS	0
-#define MBOX_V2ACFG_DIRQ_PENDING_POS	4
-#define MBOX_V2ACFG_DIRQ_ENABLE_BITS	1
-#define MBOX_V2ACFG_DIRQ_PENDING_BITS	1
+static volatile struct mbox *g_mbox;
 
-static volatile struct mbox_regs *g_mbox_regs;
-static struct ioq g_mbox_ioq;
-
-// IPL_HARD
 static
-void mbox_hw_irqh()
+void mbox_send(struct mbox_msg *m, pa_t pa)
 {
-	uint32_t val;
-
-	val = g_mbox_regs->v2a_config;
-	if (!bits_get(val, MBOX_V2ACFG_DIRQ_PENDING))
-		return;
-
-	// Clear the signal.
-	g_mbox_regs->v2a_read;
-
-	cpu_raise_sw_irq(IRQ_ARM_MAILBOX);
-}
-
-// IPL_SCHED
-static
-void mbox_sw_irqh()
-{
-	ioq_complete_ior(&g_mbox_ioq);
-}
-
-// IPL_THREAD, or IPL_SOFT
-static
-int mbox_ioq_req(struct ior *ior)
-{
-	ba_t ba;
-	struct mbox_msg *m;
-
-	m = ior_param(ior);
-	ba = pa_to_ba(ior_param_pa(ior));
 	dc_civac(m, m->size);
 	dsb();
 
 	for (;;) {
-		if (g_mbox_regs->a2v_status & 0x80000000ul)
+		if (g_mbox[1].status & 0x80000000ul)
 			continue;
 		break;
 	}
-	g_mbox_regs->a2v_write = ba;
+	g_mbox[1].rw = pa_to_ba(pa);
+}
+
+static
+int mbox_check_tag(const struct mbox_tag *t)
+{
+	size_t size;
+	if (!(t->code & 0x80000000ul))
+		return ERR_FAILED;
+	size = t->code & 0x7ffffffful;
+	if (size != t->buf_size)
+		return ERR_FAILED;
 	return ERR_SUCCESS;
 }
 
-// IPL_SOFT
 static
-int mbox_ioq_res(struct ior *ior)
+int mbox_recv(struct mbox_msg *m, pa_t pa)
 {
 	int err;
-	struct mbox_msg *m;
-	struct mbox_msg_tag *t;
-	size_t size;
+	uint32_t val;
+	struct mbox_tag *t;
 
-	m = ior_param(ior);
-	err = ERR_FAILED;
+	for (;;) {
+		if (g_mbox[0].status & 0x40000000ul)
+			continue;
+		break;
+	}
+
+	val = g_mbox[0].rw;
+	if (val != pa_to_ba(pa))
+		return ERR_FAILED;
 	if (m->code != 0x80000000ul)
-		goto err0;
+		return ERR_FAILED;
 
-	t = (struct mbox_msg_tag *)(m + 1);
-	size = t->data_size & 0x7ffffffful;
-	if ((t->data_size & 0x80000000ul) && size == t->buf_size)
-		err = ERR_SUCCESS;
-err0:
-	return err;
+	t = (struct mbox_tag *)(m + 1);
+	for (;t->id;) {
+		err = mbox_check_tag(t);
+		if (err)
+			return err;
+		t = (struct mbox_tag *)((char *)(t + 1) + t->buf_size);
+	}
+	return ERR_SUCCESS;
 }
 
 // IPL_THREAD
@@ -136,34 +110,37 @@ int mbox_set_dom_state(int dom, int is_on)
 {
 	int err;
 	size_t size;
-	struct ior ior;
-	struct mbox_msg_set_dom_state *m;
+	struct mbox_tag_set_dom_state *t;
+	struct mbox_msg *m;
 	pa_t pa;
 
-	size = align_up(sizeof(*m), 16);
+	is_on = !!is_on;
+
+	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
+	size = align_up(size, 16);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
 	err = slabs_va_to_pa(m, &pa);
 	if (err)
-		return err;
+		goto err0;
 
-	is_on = !!is_on;
-	m->msg.size = size;
-	m->msg.code = 0;
-	m->msg_tag.id = MBOX_TAG_SET_DOM_STATE;
-	m->msg_tag.buf_size = sizeof(m->buf);
-	m->msg_tag.data_size = 0;
-	m->buf.dom = dom;
-	m->buf.is_on = is_on;
-	m->end_tag = 0;
+	memset(m, 0, size);
+	m->size = size;
 
-	ior_init(&ior, &g_mbox_ioq, 0, m, pa | 8);
-	err = ioq_queue_ior(&ior);
-	if (!err)
-		err = ior_wait(&ior);
-	if (!err && m->buf.is_on != is_on)
+	t = (struct mbox_tag_set_dom_state *)(m + 1);
+	t->tag.id = 0x38030;
+	t->tag.buf_size = sizeof(t->buf);
+	t->buf.dom = dom;
+	t->buf.is_on = is_on;
+
+	mbox_send(m, pa | 8);
+	err = mbox_recv(m, pa | 8);
+	if (err)
+		goto err0;
+	if (t->buf.is_on != is_on)
 		err = ERR_FAILED;
+err0:
 	free(m);
 	return err;
 }
@@ -173,31 +150,32 @@ int mbox_get_fw_rev(int *out)
 {
 	int err;
 	size_t size;
-	struct ior ior;
-	struct mbox_msg_get_fw_rev *m;
+	struct mbox_tag_get_fw_rev *t;
+	struct mbox_msg *m;
 	pa_t pa;
 
-	size = align_up(sizeof(*m), 16);
+	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
+	size = align_up(size, 16);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
 	err = slabs_va_to_pa(m, &pa);
 	if (err)
-		return err;
+		goto err0;
 
-	m->msg.size = size;
-	m->msg.code = 0;
-	m->msg_tag.id = MBOX_TAG_GET_FW_REV;
-	m->msg_tag.buf_size = sizeof(m->buf);
-	m->msg_tag.data_size = 0;
-	m->end_tag = 0;
+	memset(m, 0, size);
+	m->size = size;
 
-	ior_init(&ior, &g_mbox_ioq, 0, m, pa | 8);
-	err = ioq_queue_ior(&ior);
-	if (!err)
-		err = ior_wait(&ior);
-	if (!err)
-		*out = m->buf.rev;
+	t = (struct mbox_tag_get_fw_rev *)(m + 1);
+	t->tag.id = 1;
+	t->tag.buf_size = sizeof(t->buf);
+
+	mbox_send(m, pa | 8);
+	err = mbox_recv(m, pa | 8);
+	if (err)
+		goto err0;
+	*out = t->buf.rev;
+err0:
 	free(m);
 	return err;
 }
@@ -210,9 +188,6 @@ int mbox_init()
 	va_t va;
 	vpn_t page;
 	pfn_t frame;
-	uint32_t val;
-
-	ioq_init(&g_mbox_ioq, mbox_ioq_req, mbox_ioq_res);
 
 	pa = MBOX_BASE;
 	frame = pa_to_pfn(pa);
@@ -224,14 +199,7 @@ int mbox_init()
 		goto err1;
 	va = vpn_to_va(page);
 	va += pa & (PAGE_SIZE - 1);
-	g_mbox_regs = (volatile struct mbox_regs *)va;
-	cpu_register_irqh(IRQ_ARM_MAILBOX, mbox_hw_irqh, mbox_sw_irqh);
-
-	// ARM_MC_IHAVEDATAIRQEN
-	val = g_mbox_regs->v2a_config;
-	val |= bits_on(MBOX_V2ACFG_DIRQ_ENABLE);
-	g_mbox_regs->v2a_config = val;
-	cpu_enable_irq(IRQ_ARM_MAILBOX);
+	g_mbox = (volatile struct mbox *)va;
 	return ERR_SUCCESS;
 err1:
 	vmm_free(page, 1);

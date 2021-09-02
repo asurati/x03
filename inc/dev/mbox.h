@@ -4,6 +4,8 @@
 #ifndef DEV_MBOX_H
 #define DEV_MBOX_H
 
+#include <sys/mmu.h>
+
 int	mbox_get_fw_rev(int *out);
 int	mbox_set_dom_state(int dom, int is_on);
 #endif
