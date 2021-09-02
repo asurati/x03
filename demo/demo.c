@@ -9,6 +9,7 @@ int demo_run()
 	int	d1_run();
 	int	d2_run();
 	int	d3_run();
+	int	d4_run();
 
 	err = d1_run();
 	con_out("d1: err %x", err);
@@ -22,6 +23,11 @@ int demo_run()
 
 	err = d3_run();
 	con_out("d3: err %x", err);
+	if (err)
+		return err;
+
+	err = d4_run();
+	con_out("d4: err %x", err);
 	if (err)
 		return err;
 	return err;
