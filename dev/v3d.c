@@ -5,23 +5,14 @@
 #include <lib/stdlib.h>
 
 #include <sys/err.h>
+#include <sys/cpu.h>
 #include <sys/vmm.h>
-#include <sys/spinlock.h>
 
 #include <dev/con.h>
-#include <dev/ioq.h>
 #include <dev/mbox.h>
 #include <dev/v3d.h>
 
-struct v3d_run_prog {
-	uint32_t			srqcs;
-	ba_t				code_ba;
-	ba_t				unif_ba;
-	size_t				unif_size;
-};
-
 static volatile uint32_t *g_v3d_regs;
-static struct ioq g_v3d_ioq;
 
 // IPL_HARD
 static
@@ -38,71 +29,83 @@ void v3d_hw_irqh()
 		g_v3d_regs[V3D_INTCTL] = intctl;
 	if (dbqitc)
 		g_v3d_regs[V3D_DBQITC] = dbqitc;
-
-	if (intctl || dbqitc)
-		cpu_raise_sw_irq(IRQ_VC_3D);
-}
-
-// IPL_SCHED
-static
-void v3d_sw_irqh()
-{
-	ioq_complete_ior(&g_v3d_ioq);
-}
-
-// IPL_THREAD, or IPL_SCHED
-static
-int v3d_ioq_req(struct ior *ior)
-{
-	struct v3d_run_prog *rp;
-
-	rp = ior_param(ior);
-	if (rp->unif_size) {
-		g_v3d_regs[V3D_SRQUA] = rp->unif_ba;
-		g_v3d_regs[V3D_SRQUL] = rp->unif_size;
-	}
-	rp->srqcs = g_v3d_regs[V3D_SRQCS];
-	g_v3d_regs[V3D_SRQPC] = rp->code_ba;
-	return ERR_SUCCESS;
-}
-
-// IPL_SCHED
-static
-int v3d_ioq_res(struct ior *ior)
-{
-	int pdone, cdone;
-	uint32_t srqcs;
-	struct v3d_run_prog *rp;
-
-	rp = ior_param(ior);
-	srqcs = g_v3d_regs[V3D_SRQCS];
-	pdone = bits_get(rp->srqcs, V3D_SRQCS_NUM_DONE);
-	cdone = bits_get(srqcs, V3D_SRQCS_NUM_DONE);
-	if (cdone > pdone || (pdone == 0xff && cdone == 0))
-		return ERR_SUCCESS;
-	return ERR_FAILED;
 }
 
 // IPL_THREAD
 int v3d_run_prog(ba_t code_ba, ba_t unif_ba, size_t unif_size)
 {
-	int err;
-	struct ior ior;
-	struct v3d_run_prog *rp;
+	int srqcs;
+	int pdone, cdone;
 
-	rp = malloc(sizeof(*rp));
-	if (rp == NULL)
-		return ERR_NO_MEM;
-	rp->code_ba = code_ba;
-	rp->unif_ba = unif_ba;
-	rp->unif_size = unif_size;
+	if (unif_size) {
+		g_v3d_regs[V3D_SRQUA] = unif_ba;
+		g_v3d_regs[V3D_SRQUL] = unif_size;
+	}
+	srqcs = g_v3d_regs[V3D_SRQCS];
+	pdone = bits_get(srqcs, V3D_SRQCS_NUM_DONE);
+	g_v3d_regs[V3D_SRQPC] = code_ba;
 
-	ior_init(&ior, &g_v3d_ioq, 0, rp, 0);
-	err = ioq_queue_ior(&ior);
-	if (!err)
-		err = ior_wait(&ior);
-	free(rp);
-	return err;
+	for (;;) {
+		srqcs = g_v3d_regs[V3D_SRQCS];
+		cdone = bits_get(srqcs, V3D_SRQCS_NUM_DONE);
+		if (cdone != pdone)
+			break;
+	}
+	return ERR_SUCCESS;
+}
+
+void v3d_run_renderer(ba_t cr, size_t size)
+{
+	g_v3d_regs[V3D_CT1CS] = 1ul << 15;
+	g_v3d_regs[V3D_CT1CA] = cr;
+	g_v3d_regs[V3D_CT1EA] = cr + size;
+
+	for (;;) {
+		if (g_v3d_regs[V3D_CT1CS] & (1ul << 5))
+			continue;
+		break;
+	}
+#if 0
+	con_out("errstat %x", g_v3d_regs[V3D_ERRSTAT]);
+	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
+	con_out("ct1cs %x", g_v3d_regs[V3D_CT1CS]);
+	con_out("ct1ca %x", g_v3d_regs[V3D_CT1CA]);
+	con_out("ct1ea %x", g_v3d_regs[V3D_CT1EA]);
+	con_out("ct1lc %x", g_v3d_regs[V3D_CT1LC]);
+	con_out("ct1pc %x", g_v3d_regs[V3D_CT1PC]);
+	con_out("pcs %x", g_v3d_regs[V3D_PCS]);
+	con_out("bfc %x", g_v3d_regs[V3D_BFC]);
+	con_out("rfc %x", g_v3d_regs[V3D_RFC]);
+	con_out("bpca %x", g_v3d_regs[V3D_BPCA]);
+	con_out("bpcs %x", g_v3d_regs[V3D_BPCS]);
+#endif
+}
+
+void v3d_run_binner(ba_t cr, size_t size)
+{
+	g_v3d_regs[V3D_CT0CS] = 1ul << 15;
+	g_v3d_regs[V3D_CT0CA] = cr;
+	g_v3d_regs[V3D_CT0EA] = cr + size;
+
+	for (;;) {
+		if (g_v3d_regs[V3D_CT0CS] & (1ul << 5))
+			continue;
+		break;
+	}
+#if 0
+	con_out("errstat %x", g_v3d_regs[V3D_ERRSTAT]);
+	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
+	con_out("ct0cs %x", g_v3d_regs[V3D_CT0CS]);
+	con_out("ct0ca %x", g_v3d_regs[V3D_CT0CA]);
+	con_out("ct0ea %x", g_v3d_regs[V3D_CT0EA]);
+	con_out("ct0lc %x", g_v3d_regs[V3D_CT0LC]);
+	con_out("ct0pc %x", g_v3d_regs[V3D_CT0PC]);
+	con_out("pcs %x", g_v3d_regs[V3D_PCS]);
+	con_out("bfc %x", g_v3d_regs[V3D_BFC]);
+	con_out("rfc %x", g_v3d_regs[V3D_RFC]);
+	con_out("bpca %x", g_v3d_regs[V3D_BPCA]);
+	con_out("bpcs %x", g_v3d_regs[V3D_BPCS]);
+#endif
 }
 
 // IPL_THREAD
@@ -113,8 +116,6 @@ int v3d_init()
 	va_t va;
 	vpn_t page;
 	pfn_t frame;
-
-	ioq_init(&g_v3d_ioq, v3d_ioq_req, v3d_ioq_res);
 
 	err = mbox_set_dom_state(11, 1);
 	if (err)
@@ -135,8 +136,8 @@ int v3d_init()
 	err = ERR_INVALID;
 	if (g_v3d_regs[V3D_IDENT0] != 0x2443356)
 		goto err2;
-		
-	cpu_register_irqh(IRQ_VC_3D, v3d_hw_irqh, v3d_sw_irqh);
+
+	cpu_register_irqh(IRQ_VC_3D, v3d_hw_irqh, NULL);
 
 	// Allow QPU to interrupt the host.
 	g_v3d_regs[V3D_DBCFG] |= bits_on(V3D_DBCFG_QITENA);
@@ -147,8 +148,8 @@ int v3d_init()
 	// Allow all QPUs to generate interrupts.
 	g_v3d_regs[V3D_DBQITE] |= 0xffff;	// 16 QPUS.
 
-	// Disable GPU pipeline interrupts.
-	g_v3d_regs[V3D_INTDIS] |= 0xf;
+	// Enable binning/rendering done interrupts.
+	g_v3d_regs[V3D_INTENA] |= 0x3;
 
 	// From QPU's PoV, VPM is a 64x16x4 = 4KB memory region.
 	// Enable VPM for user programs.
