@@ -65,46 +65,38 @@ int d4_run()
 	static char ssr_buf[32] __attribute__((aligned(32)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
-		0x158c0dc0, 0xd0020800,
-		0x1000140, 0x10020800,
-		0x158c0dc0, 0xd0020840,
-		0x1000340, 0x10020840,
-		0x158c0dc0, 0xd0020880,
-		0x1000540, 0x10020880,
+		0x158c0dc0, 0xd0020827,
+		0x019e7140, 0x10020827,
+		0x158c0dc0, 0xd0020867,
+		0x019e7340, 0x10020867,
+		0x158c0dc0, 0xd00208a7,
+		0x019e7540, 0x100208a7,
 
-		0x437f0000, 0xe00208c0,
+		0x000000ff, 0xe00248e7,
+		0x089e76c0, 0x100208e7,
+		0x209e7003, 0x100049e0,
+		0x209e700b, 0x100049e1,
+		0x209e7013, 0x100049e2,
 
-		0x20000003, 0x10004020,
-		0x2000000b, 0x10004021,
-		0x20000013, 0x10004022,
+		0x079e7000, 0x10020827,
+		0x079e7240, 0x10020867,
+		0x079e7480, 0x100208a7,
 
-		0x70001c0, 0xd0020800,
-		0x70003c0, 0xd0020840,
-		0x70005c0, 0xd0020880,
+		0x119c85c0, 0xd00208a7,
+		0x119c85c0, 0xd00208a7,
+		0x119c83c0, 0xd0020867,
 
-		0x110085c0, 0xd0020880,
-		0x110085c0, 0xd0020880,
-		0x110083c0, 0xd0020840,
+		0x159e7040, 0x10020827,
+		0x159e7080, 0x10020827,
 
-		0x15000040, 0x10020800,
-		0x15000080, 0x10020800,
+		0xff000000, 0xe0024867,
+		0x159e7040, 0x10020827,
+		0x159e7000, 0x50020ba7,
 
-		0xff000000, 0xe0020840,
-		0x15000040, 0x10020800,
-
-		0x150001c0, 0xd0020b80,
-		0x0, 0x50000000,
-
-		0x15001fc0, 0xd0020980,
-		0x0, 0x30000000,
-		0x0, 0x10000000,
-		0x0, 0x10000000,
-#if 0
 		0x159c1fc0, 0xd00209a7,
 		0x009e7000, 0x300009e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
-#endif
 	};
 
 	memset(ssr_buf, 0, sizeof(ssr_buf));
@@ -246,3 +238,41 @@ int d4_run()
 	err = ERR_SUCCESS;
 	return err;
 }
+
+#if 0
+# RGB
+ori	r0, vary_rd, 0;
+fadd	r0, r0, r5;
+ori	r1, vary_rd, 0;
+fadd	r1, r1, r5;
+ori	r2, vary_rd, 0;
+fadd	r2, r2, r5;
+
+# x 255.0
+li	r3, -, 255;
+itof	r3, r3, r3;
+fmul	r0, r0, r3;
+fmul	r1, r1, r3;
+fmul	r2, r2, r3;
+
+# To integer colour
+ftoi	r0, r0, r0;
+ftoi	r1, r1, r1;
+ftoi	r2, r2, r2;
+
+# RGBA8888 to ABGR32
+shli	r2, r2, 8;	# Blue shifted by 16
+shli	r2, r2, 8;
+shli	r1, r1, 8;	# Green shifted by 8
+
+or	r0, r0, r1;	# BGR32
+or	r0, r0, r2;
+
+li	r1, -, 0xff000000;	# ABGR32
+or	r0, r0, r1;
+
+or	tlb_clr_all, r0, r0;	usb;
+
+ori	host_int, 1, 1;
+pe;;;
+#endif
