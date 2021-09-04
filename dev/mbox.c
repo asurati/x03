@@ -204,8 +204,8 @@ int mbox_alloc_fb(pa_t *out_base, size_t *out_size)
 	ta->tag.buf_size = sizeof(ta->buf);
 
 	tp->tag.id = 0x48003;
-	tp->buf.width = 1280;
-	tp->buf.height = 720;
+	tp->buf.width = 640;
+	tp->buf.height = 480;
 
 	*tv = *tp;
 	tv->tag.id = 0x48004;
