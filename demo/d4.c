@@ -10,9 +10,17 @@
 #include <dev/v3d.h>
 #include <dev/con.h>
 
+// Assuming a 640 x 480 framebuffer size.
+
+#define NUM_TILES_X			10
+#define NUM_TILES_Y			7
+
+#define WIDTH				(NUM_TILES_X * 64)
+#define HEIGHT				(NUM_TILES_Y * 64)
+
 struct vertex {
-	uint16_t			xs;
-	uint16_t			ys;
+	int16_t				xs;
+	int16_t				ys;
 	float				zs;
 	float				wcr;
 	float				r;
@@ -20,18 +28,23 @@ struct vertex {
 	float				b;
 } __attribute__((packed));
 
+// In screen coordinates. x and y in 12.4 fixed point format.
 static const struct vertex verts[] __attribute__((aligned(32))) = {
-	{0,		0,		0.5,	1.0, 1.0, 0.0, 0.0},
-	{60 << 4,	0,		0.5,	1.0, 0.0, 1.0, 0.0},
-	{0,		30 << 4,	0.5,	1.0, 0.0, 0.0, 1.0},
+	// top
+	{320 << 4,	32 << 4,	0.5,	1.0, 1.0, 0.0, 0.0},
+
+	// left
+	{32 << 4,	300 << 4,	0.5,	1.0, 0.0, 1.0, 0.0},
+
+	// right
+	{608 << 4,	300 << 4,	0.5,	1.0, 0.0, 0.0, 1.0},
 };
 
 int d4_run()
 {
-	int err, off, i, x, y;
-	uint32_t val;
-	volatile uint32_t *fb;
-	volatile uint32_t *fb_get();
+	int err, off, x, y;
+	va_t tva;
+	pa_t	fb_get_pa();
 
 	struct v3dcr_tile_binning_mode		*tbmc;
 	struct v3dcr_tile_binning_start		*tbs;
@@ -44,32 +57,33 @@ int d4_run()
 	struct v3dcr_flush			*f;
 	struct v3dcr_nv_shader_state_rec	*ssr;
 
+	struct v3dcr_clear_colours		*cc;
 	struct v3dcr_tile_rendering_mode	*trmc;
 	struct v3dcr_tile_coords		*tc;
 	struct v3dcr_branch			*br;
-	struct v3dcr_store_mstcb_eof		*eof;
+	struct v3dcr_store_mstcb		*str;
+	struct v3dcr_store_tb_gen		*stg;
 
-	static char v3dcr[512] __attribute__((aligned(32)));
+	static char v3dcr[PAGE_SIZE] __attribute__((aligned(32)));
 
 	// Alignment enforced by TBMC/112.
-	static uint32_t tsda[64 >> 2] __attribute__((aligned(32)));
+	static uint32_t tsda[(NUM_TILES_Y * NUM_TILES_X * 48) >> 2]
+		__attribute__((aligned(32)));
 
 	// Alignment seems to be enfored by the max. tile allocation block
 	// size of 256 bytes. This buffer is the binning memory pool
 	// BPCA/BPCS.
 	static uint32_t ta[PAGE_SIZE >> 2] __attribute__((aligned(256)));
 
-	static uint32_t tb[64 * 64] __attribute__((aligned(32)));
-
 	// Alignment enforced by NVSS/65.
 	static char ssr_buf[32] __attribute__((aligned(32)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
-		0x158c0dc0, 0xd0020827,
+		0x018c0dc0, 0xd0020827,
 		0x019e7140, 0x10020827,
-		0x158c0dc0, 0xd0020867,
+		0x018c0dc0, 0xd0020867,
 		0x019e7340, 0x10020867,
-		0x158c0dc0, 0xd00208a7,
+		0x018c0dc0, 0xd00208a7,
 		0x019e7540, 0x100208a7,
 
 		0x000000ff, 0xe00248e7,
@@ -82,8 +96,8 @@ int d4_run()
 		0x079e7240, 0x10020867,
 		0x079e7480, 0x100208a7,
 
-		0x119c85c0, 0xd00208a7,
-		0x119c85c0, 0xd00208a7,
+		0x119c81c0, 0xd0020827,
+		0x119c81c0, 0xd0020827,
 		0x119c83c0, 0xd0020867,
 
 		0x159e7040, 0x10020827,
@@ -135,21 +149,26 @@ int d4_run()
 	tbmc->ta_base = va_to_ba((va_t)ta);
 	tbmc->ta_size = sizeof(ta);
 	tbmc->tsda_base = va_to_ba((va_t)tsda);
-	tbmc->width = tbmc->height = 1;
-	tbmc->flags = 4;	// auto-init tsda. Necessary.
+	tbmc->width = NUM_TILES_X;
+	tbmc->height = NUM_TILES_Y;
+	tbmc->flags = 4;	// Auto-init tsda. Necessary.
 
 	tbs->id = 6;
 
 	cw->id = 102;
-	cw->width = cw->height = 64;
+	cw->width = WIDTH;
+	cw->height = HEIGHT;
 
 	cb->id = 96;
 	cb->flags[0] = 3;
 
+	// The viewport offset coordinates are in signed 12.4 fixed point
+	// format.
 	vo->id = 103;
 
 	cxy->id = 105;
-	cxy->half_width = cxy->half_height = 32 * 16.0;
+	cxy->half_width = (WIDTH / 2) * 16.0;
+	cxy->half_height = (HEIGHT / 2) * 16.0;
 
 	ss->id = 65;
 	ss->ssr_base = va_to_ba((va_t)ssr_buf);
@@ -194,58 +213,81 @@ int d4_run()
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
 
+	cc = (struct v3dcr_clear_colours *)&v3dcr[off];
+	off += sizeof(*cc);
+
 	trmc = (struct v3dcr_tile_rendering_mode *)&v3dcr[off];
 	off += sizeof(*trmc);
 
 	tc = (struct v3dcr_tile_coords *)&v3dcr[off];
 	off += sizeof(*tc);
 
-	br = (struct v3dcr_branch *)&v3dcr[off];
-	off += sizeof(*br);
+	stg = (struct v3dcr_store_tb_gen *)&v3dcr[off];
+	off += sizeof(*stg);
 
-	eof = (struct v3dcr_store_mstcb_eof *)&v3dcr[off];
-	off += sizeof(*eof);
+	cc->id = 114;
+	// even and odd??
+	cc->colour[0] = 0xffffff00;	// ARGB32
+	cc->colour[1] = 0xffffff00;	// ARGB32
 
 	trmc->id = 113;
-	trmc->tb_base = va_to_ba((va_t)tb);
-	trmc->width = trmc->height = 64;
+	trmc->tb_base = pa_to_ba(fb_get_pa());
+	trmc->width = WIDTH;
+	trmc->height = HEIGHT;
 	trmc->flags = 4;
 
+	// Clear Colours needs an empty write.
 	tc->id = 115;
+	stg->id = 28;
 
-	br->id = 17;
-	br->addr = va_to_ba((va_t)ta);
+	for (y = 0; y < NUM_TILES_Y; ++y) {
+		for (x = 0; x < NUM_TILES_X; ++x) {
+			tc = (struct v3dcr_tile_coords *)&v3dcr[off];
+			off += sizeof(*tc);
 
-	eof->id = 25;
+			br = (struct v3dcr_branch *)&v3dcr[off];
+			off += sizeof(*br);
+
+			str = (struct v3dcr_store_mstcb *)&v3dcr[off];
+			off += sizeof(*str);
+
+			tc->id = 115;
+			tc->col = x;
+			tc->row = y;
+
+			tva = (va_t)ta;
+			tva += (y * NUM_TILES_X + x) * 32;
+
+			br->id = 17;
+			br->addr = va_to_ba(tva);
+
+			str->id = 24;
+		}
+	}
+
+	// Last tile signals the EOF.
+	str->id = 25;
 
 	dc_cvac(v3dcr, off);
 	dsb();
 
 	v3d_run_renderer(va_to_ba((va_t)v3dcr), off);
 
-	dc_ivac(tb, sizeof(tb));
-	dsb();
-
-	fb = fb_get();
-
-	for (y = 0, i = 0; y < 64; ++y) {
-		for (x = 0; x < 64; ++x) {
-			val = *(volatile uint32_t *)&tb[i++];
-			fb[y * 1280 + x] = val;
-		}
-		dc_cvac((void *)&fb[y * 1280], 64*4);
-	}
 	err = ERR_SUCCESS;
 	return err;
 }
 
+// The framebuffer format is BGRA8888, or 0xaarrggbb, or ARGB32.
+
 #if 0
 # RGB
-ori	r0, vary_rd, 0;
+faddi	r0, vary_rd, 0;
 fadd	r0, r0, r5;
-ori	r1, vary_rd, 0;
+
+faddi	r1, vary_rd, 0;
 fadd	r1, r1, r5;
-ori	r2, vary_rd, 0;
+
+faddi	r2, vary_rd, 0;
 fadd	r2, r2, r5;
 
 # x 255.0
@@ -260,18 +302,18 @@ ftoi	r0, r0, r0;
 ftoi	r1, r1, r1;
 ftoi	r2, r2, r2;
 
-# RGBA8888 to ABGR32
-shli	r2, r2, 8;	# Blue shifted by 16
-shli	r2, r2, 8;
+# 0xaarrggbb
+shli	r0, r0, 8;	# Red shifted by 16
+shli	r0, r0, 8;
 shli	r1, r1, 8;	# Green shifted by 8
 
-or	r0, r0, r1;	# BGR32
+or	r0, r0, r1;
 or	r0, r0, r2;
 
-li	r1, -, 0xff000000;	# ABGR32
+li	r1, -, 0xff000000;
 or	r0, r0, r1;
 
-or	tlb_clr_all, r0, r0;	usb;
+or	tlb_clr_all, r0, r0	usb;
 
 ori	host_int, 1, 1;
 pe;;;

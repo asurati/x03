@@ -226,8 +226,14 @@ struct v3dcr_branch {
 	uint32_t			addr;
 } __attribute__((packed));
 
-struct v3dcr_store_mstcb_eof {
-	uint8_t				id;		// 25
+struct v3dcr_store_tb_gen {
+	uint8_t				id;		// 28
+	uint8_t				flags[2];
+	uint32_t			base;
+} __attribute__((packed));
+
+struct v3dcr_store_mstcb {
+	uint8_t				id;		// 24; 25 with EOF
 } __attribute__((packed));
 
 int	v3d_run_prog(ba_t code_ba, ba_t unif_ba, size_t unif_size);
