@@ -43,19 +43,7 @@ struct cs_vertex {
 } __attribute__((packed));
 
 #if 0
-static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
-	{32 << 4, 39 << 4, 2.5, 0.5},
-	{26 << 4, 25 << 4, 2.5, 0.5},
-	{37 << 4, 25 << 4, 2.5, 0.5},
-};
-
-static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
-	{0, 0.44, 1, 2, 32 << 4, 39 << 4, 2.5, 0.5},
-	{-0.34, -0.44, 1, 2, 26 << 4, 25 << 4, 2.5, 0.5},
-	{0.34, -0.44, 1, 2, 37 << 4, 25 << 4, 2.5, 0.5},
-};
-#endif
-
+// In screen coordinates. x and y in 12.4 fixed point format.
 static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
 	{320 << 4, 292 << 4, 2.5, 0.5},
 	{265 << 4, 187 << 4, 2.5, 0.5},
@@ -67,20 +55,18 @@ static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
 	{-0.34, -0.44, 1, 2, 265 << 4, 187 << 4, 2.5, 0.5},
 	{0.34, -0.44, 1, 2, 374 << 4, 187 << 4, 2.5, 0.5},
 };
-
-#if 0
-// In screen coordinates. x and y in 12.4 fixed point format.
-static const struct vertex verts[] __attribute__((aligned(32))) = {
-	// top
-	{0, 0.44, 1, 2, 320 << 4, (292 << 4) | 13, 2.5, 0.5},
-
-	// left
-	{-0.34, -0.44, 1, 2, (265 << 4) | 9, (187 << 4) | 3, 2.5, 0.5},
-
-	// right
-	{0.34, -0.44, 1, 2, (374 << 4) | 6, (187 << 4) | 3, 2.5, 0.5},
-};
 #endif
+static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
+	{320 << 4, (346 << 4) | 9, 1.0, 1.0},
+	{(211 << 4) | 3, (134 << 4) | 6, 1.0, 1.0},
+	{(428 << 4) | 11, (134 << 4) | 6, 1.0, 1.0},
+};
+
+static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
+	{0.0, 0.44,	-1.0, 1.0,	320 << 4, (345 << 4) | 9, 1.0, 1.0},
+	{-0.34, -0.44,	-1.0, 1.0,	(211 << 4) | 3, (134 << 4) | 6, 1.0, 1.0},
+	{0.34, -0.44,	-1.0, 1.0,	(428 << 4) | 11, (134 << 4) | 6, 1.0, 1.0},
+};
 
 int d5_run()
 {
@@ -97,6 +83,7 @@ int d5_run()
 	struct v3dcr_shader_state		*ss;
 	struct v3dcr_vert_array			*va;
 	struct v3dcr_flush			*f;
+	struct v3dcr_sema			*sem;
 
 	struct v3dcr_clear_colours		*cc;
 	struct v3dcr_tile_rendering_mode	*trmc;
@@ -120,21 +107,44 @@ int d5_run()
 	static struct v3dcr_gl_shader_state_rec	ssr
 		__attribute__((aligned(32)));
 
-	static const uint32_t vs_code[] __attribute__((aligned(8))) = {
-#if 0
-		0x00300a04, 0xe0024c67,
+	static const uint32_t cs_code[] __attribute__((aligned(8))) = {
+		0x00701a00, 0xe0020c67,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
-
 		0x15c00dc0, 0xd0020027,
 		0x15c00dc0, 0xd0020067,
 		0x15c00dc0, 0xd00200a7,
-		0x00000a00, 0xe0025c67,
+		0x15c00dc0, 0xd00200e7,
+		0x15c00dc0, 0xd0020127,
+		0x15c00dc0, 0xd0020167,
+		0x15c00dc0, 0xd00201a7,
+		0x00001a00, 0xe0021c67,
 		0x15027d80, 0x10020c27,
 		0x15067d80, 0x10020c27,
 		0x150a7d80, 0x10020c27,
-#endif
+		0x150e7d80, 0x10020c27,
+		0x15127d80, 0x10020c27,
+		0x15167d80, 0x10020c27,
+		0x151a7d80, 0x10020c27,
+		0x159c1fc0, 0xd00209a7,
+		0x009e7000, 0x300009e7,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
+	};
+
+	static const uint32_t vs_code[] __attribute__((aligned(8))) = {
+		0x00301a00, 0xe0020c67,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
+		0x15c00dc0, 0xd0020027,
+		0x15c00dc0, 0xd0020067,
+		0x15c00dc0, 0xd00200a7,
+		0x00001a00, 0xe0021c67,
+		0x15027d80, 0x10020c27,
+		0x15067d80, 0x10020c27,
+		0x150a7d80, 0x10020c27,
 		0x159c1fc0, 0xd00209a7,
 		0x009e7000, 0x300009e7,
 		0x009e7000, 0x100009e7,
@@ -142,14 +152,14 @@ int d5_run()
 	};
 
 	static const uint32_t fs_code[] __attribute__((aligned(8))) = {
-#if 0
-		0xffff0000, 0xe0024827,
-		0x159e7000, 0x50020ba7,
+		0x009e7000, 0x400009e7,
+		0xffff0000, 0xe0020ba7,
+		0x009e7000, 0x500009e7,
 		0x159c1fc0, 0xd00209a7,
 		0x009e7000, 0x300009e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
-#endif		
+#if 0
 		0x018c0dc0, 0xd0020827,
 		0x019e7140, 0x10020827,
 		0x018c0dc0, 0xd0020867,
@@ -182,6 +192,7 @@ int d5_run()
 		0x009e7000, 0x300009e7,
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
+#endif
 	};
 
 	off = 0;
@@ -192,6 +203,9 @@ int d5_run()
 
 	tbs = (struct v3dcr_tile_binning_start *)&v3dcr[off];
 	off += sizeof(*tbs);
+
+	sem = (struct v3dcr_sema *)&v3dcr[off];
+	off += sizeof(*sem);
 
 	cw = (struct v3dcr_clip_window *)&v3dcr[off];
 	off += sizeof(*cw);
@@ -224,6 +238,8 @@ int d5_run()
 
 	tbs->id = 6;
 
+	sem->id = 7;
+
 	cw->id = 102;
 	cw->width = WIDTH;
 	cw->height = HEIGHT;
@@ -254,7 +270,7 @@ int d5_run()
 	ssr.fs_code_addr = va_to_ba((va_t)fs_code);
 	ssr.cs_attr_sel = 1;
 	ssr.cs_attr_size = sizeof(struct cs_vertex);
-	ssr.cs_code_addr = va_to_ba((va_t)vs_code);
+	ssr.cs_code_addr = va_to_ba((va_t)cs_code);
 	ssr.vs_attr_sel = 2;
 	ssr.vs_attr_size = sizeof(struct vs_vertex);
 	ssr.vs_code_addr = va_to_ba((va_t)vs_code);
@@ -292,6 +308,9 @@ int d5_run()
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
 
+	sem = (struct v3dcr_sema *)&v3dcr[off];
+	off += sizeof(*sem);
+
 	cc = (struct v3dcr_clear_colours *)&v3dcr[off];
 	off += sizeof(*cc);
 
@@ -303,6 +322,8 @@ int d5_run()
 
 	stg = (struct v3dcr_store_tb_gen *)&v3dcr[off];
 	off += sizeof(*stg);
+
+	sem->id = 8;
 
 	cc->id = 114;
 	// even and odd??
@@ -356,15 +377,40 @@ int d5_run()
 	return err;
 }
 
+// Coordinate Shader.
+#if 0
+li	vpr_setup, -, 0x701a00;
+;;;
+ori	a0, vpr, 0;
+ori	a1, vpr, 0;
+ori	a2, vpr, 0;
+ori	a3, vpr, 0;
+ori	a4, vpr, 0;
+ori	a5, vpr, 0;
+ori	a6, vpr, 0;
+
+li	vpw_setup, -, 0x1a00;
+or	vpw, a0, a0;
+or	vpw, a1, a1;
+or	vpw, a2, a2;
+or	vpw, a3, a3;
+or	vpw, a4, a4;
+or	vpw, a5, a5;
+or	vpw, a6, a6;
+
+ori	host_int, 1, 1;
+pe;;;
+#endif
+
 // Vertex Shader.
 #if 0
-li	vpr_setup, -, 0x300a04;
+li	vpr_setup, -, 0x301a00;
 ;;;
 ori	a0, vpr, 0;
 ori	a1, vpr, 0;
 ori	a2, vpr, 0;
 
-li	vpw_setup, -, 0xa00;
+li	vpw_setup, -, 0x1a00;
 or	vpw, a0, a0;
 or	vpw, a1, a1;
 or	vpw, a2, a2;
@@ -372,6 +418,17 @@ or	vpw, a2, a2;
 ori	host_int, 1, 1;
 pe;;;
 #endif
+
+
+#if 0
+# Wait for Scoreboard
+wsb;
+li	tlb_clr_all, -, 0xffff0000;
+usb;
+ori	host_int, 1, 1;
+pe;;;
+#endif
+
 
 // The framebuffer format is BGRA8888, or 0xaarrggbb, or ARGB32.
 #if 0
