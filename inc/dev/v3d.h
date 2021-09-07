@@ -190,6 +190,10 @@ struct v3dcr_flush {
 	uint8_t				id;		// 4
 } __attribute__((packed));
 
+struct v3dcr_sema {
+	uint8_t				id;		// inc=7, wt=8
+} __attribute__((packed));
+
 struct v3dcr_gl_attr {
 	uint32_t			base;
 	uint8_t				num_bytes;
