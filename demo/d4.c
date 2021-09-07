@@ -52,7 +52,7 @@ int d4_run()
 	struct v3dcr_config_bits		*cb;
 	struct v3dcr_viewport_offset		*vo;
 	struct v3dcr_clipper_xy_scale		*cxy;
-	struct v3dcr_nv_shader_state		*ss;
+	struct v3dcr_shader_state		*ss;
 	struct v3dcr_vert_array			*va;
 	struct v3dcr_flush			*f;
 	struct v3dcr_nv_shader_state_rec	*ssr;
@@ -136,7 +136,7 @@ int d4_run()
 	cxy = (struct v3dcr_clipper_xy_scale *)&v3dcr[off];
 	off += sizeof(*cxy);
 
-	ss = (struct v3dcr_nv_shader_state *)&v3dcr[off];
+	ss = (struct v3dcr_shader_state *)&v3dcr[off];
 	off += sizeof(*ss);
 
 	va = (struct v3dcr_vert_array *)&v3dcr[off];

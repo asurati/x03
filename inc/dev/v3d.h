@@ -174,8 +174,8 @@ struct v3dcr_clipper_xy_scale {
 	float				half_height;
 } __attribute__((packed));
 
-struct v3dcr_nv_shader_state {
-	uint8_t				id;		// 65
+struct v3dcr_shader_state {
+	uint8_t				id;		// gl=64, nv=65
 	uint32_t			ssr_base;
 } __attribute__((packed));
 
