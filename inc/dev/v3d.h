@@ -190,6 +190,37 @@ struct v3dcr_flush {
 	uint8_t				id;		// 4
 } __attribute__((packed));
 
+struct v3dcr_gl_attr {
+	uint32_t			base;
+	uint8_t				num_bytes;
+	uint8_t				stride;
+	uint8_t				vs_vpm_off;
+	uint8_t				cs_vpm_off;
+} __attribute__((packed));
+
+struct v3dcr_gl_shader_state_rec {
+	uint16_t			flags;
+
+	uint8_t				fs_num_unif;
+	uint8_t				fs_num_vary;
+	uint32_t			fs_code_addr;
+	uint32_t			fs_unif_addr;
+
+	uint16_t			vs_num_unif;
+	uint8_t				vs_attr_sel;
+	uint8_t				vs_attr_size;
+	uint32_t			vs_code_addr;
+	uint32_t			vs_unif_addr;
+
+	uint16_t			cs_num_unif;
+	uint8_t				cs_attr_sel;
+	uint8_t				cs_attr_size;
+	uint32_t			cs_code_addr;
+	uint32_t			cs_unif_addr;
+
+	struct v3dcr_gl_attr		attr[8];
+} __attribute__((packed));
+
 struct v3dcr_nv_shader_state_rec {
 	uint8_t				flags;
 	uint8_t				stride;
