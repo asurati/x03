@@ -340,6 +340,9 @@ int d5_run()
 	tc->id = 115;
 	stg->id = 28;
 
+	// Tile (x, y) writes at fb[(y * NUM_TILES_X + x) * 64]
+	// The viewport transform assumes origin at bottom left, but the
+	// fb assumes it top left. Flip the y's.
 	for (y = 0; y < NUM_TILES_Y; ++y) {
 		for (x = 0; x < NUM_TILES_X; ++x) {
 			tc = (struct v3dcr_tile_coords *)&v3dcr[off];
