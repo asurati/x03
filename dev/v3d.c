@@ -92,7 +92,6 @@ void v3d_run_binner(ba_t cr, size_t size)
 			continue;
 		break;
 	}
-#if 0
 	con_out("errstat %x", g_v3d_regs[V3D_ERRSTAT]);
 	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
 	con_out("ct0cs %x", g_v3d_regs[V3D_CT0CS]);
@@ -105,7 +104,6 @@ void v3d_run_binner(ba_t cr, size_t size)
 	con_out("rfc %x", g_v3d_regs[V3D_RFC]);
 	con_out("bpca %x", g_v3d_regs[V3D_BPCA]);
 	con_out("bpcs %x", g_v3d_regs[V3D_BPCS]);
-#endif
 }
 
 // IPL_THREAD
@@ -153,7 +151,7 @@ int v3d_init()
 
 	// From QPU's PoV, VPM is a 64x16x4 = 4KB memory region.
 	// Enable VPM for user programs.
-	//g_v3d_regs[V3D_VPMBASE] = 16;	// In the unit of 256 bytes.
+	g_v3d_regs[V3D_VPMBASE] = 16;	// In the unit of 256 bytes.
 
 	cpu_enable_irq(IRQ_VC_3D);
 	return ERR_SUCCESS;
