@@ -153,7 +153,7 @@ int v3d_init()
 
 	// From QPU's PoV, VPM is a 64x16x4 = 4KB memory region.
 	// Enable VPM for user programs.
-	g_v3d_regs[V3D_VPMBASE] = 16;	// In the unit of 256 bytes.
+	//g_v3d_regs[V3D_VPMBASE] = 16;	// In the unit of 256 bytes.
 
 	cpu_enable_irq(IRQ_VC_3D);
 	return ERR_SUCCESS;
