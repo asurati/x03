@@ -9,7 +9,7 @@
 
 static pa_t g_fb_base;
 static size_t g_fb_size;
-volatile uint32_t *g_fb;
+static volatile uint32_t *g_fb;
 
 pa_t fb_get_pa()
 {
