@@ -61,6 +61,7 @@ void cond_var_signal(struct cond_var *v)
 	ipl = cpu_raise_ipl(IPL_SCHED, &irq_mask);
 	assert(ipl == IPL_SCHED || ipl == IPL_THREAD);
 
+	// TODO signal in a loop, and remove dependency on num_waiters.
 	spin_lock(&v->state_lock);
 	if (!list_is_empty(&v->wait_queue)) {
 		list_add_head(&v->wait_queue, &wq);
