@@ -62,7 +62,7 @@ int pmm_post_init(va_t sys_end)
 	pa[0] = va_to_pa(SYS_BASE);
 	pa[1] = va_to_pa(sys_end);
 	frame[0] = pa_to_pfn(align_down(pa[0], PAGE_SIZE_BITS));
-	frame[1] = pa_to_pfn(align_down(pa[1], PAGE_SIZE_BITS));
+	frame[1] = pa_to_pfn(align_up(pa[1], PAGE_SIZE_BITS));
 	nframes = frame[1] - frame[0];
 	frame[0] -= g_pmm.base_frame;
 
