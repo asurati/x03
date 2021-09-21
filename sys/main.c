@@ -33,7 +33,7 @@ int kmain()
 	int	demo_run();
 
 	sys_end = (va_t)&_sys_end;
-	sys_end = align_up(sys_end, 8);
+	sys_end = align_up(sys_end, 3);
 
 	err = pmm_init(&sys_end);
 	if (err)

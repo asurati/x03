@@ -39,14 +39,14 @@ int pmm_init(va_t *sys_end)
 	mutex_init(&g_pmm.lock);
 
 	se = *sys_end;
-	se = align_up(se, 8);	// Align on 8byte boundary.
+	se = align_up(se, 3);	// Align on 8byte boundary.
 
 	err = bitmap_init(&g_pmm.map, (void *)se, g_pmm.num_frames);
 	if (err)
 		return err;
 
 	// Bitmap works with 64-bit units. Reserve a few extra bits to align.
-	size = align_up(g_pmm.num_frames, 64);
+	size = align_up(g_pmm.num_frames, 6);
 	se += size >> 3;
 	*sys_end = se;
 	return ERR_SUCCESS;
@@ -61,8 +61,8 @@ int pmm_post_init(va_t sys_end)
 	// Mark kernel frames as busy.
 	pa[0] = va_to_pa(SYS_BASE);
 	pa[1] = va_to_pa(sys_end);
-	frame[0] = pa_to_pfn(align_down(pa[0], PAGE_SIZE));
-	frame[1] = pa_to_pfn(align_down(pa[1], PAGE_SIZE));
+	frame[0] = pa_to_pfn(align_down(pa[0], PAGE_SIZE_BITS));
+	frame[1] = pa_to_pfn(align_down(pa[1], PAGE_SIZE_BITS));
 	nframes = frame[1] - frame[0];
 	frame[0] -= g_pmm.base_frame;
 

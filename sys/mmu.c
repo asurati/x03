@@ -127,7 +127,7 @@ void mmu_init_map_sys(va_t *sys_end)
 		if (i == eh->phnum - 1)
 			memsz = se - ph->vaddr;
 
-		memsz = align_up(memsz, PAGE_SIZE);
+		memsz = align_up(memsz, PAGE_SIZE_BITS);
 		num_pages = memsz >> PAGE_SIZE_BITS;
 		va = (va_t)ph->vaddr;
 		pa = va_to_pa(va);
@@ -160,7 +160,7 @@ void mmu_init_map_ram_map()
 
 	num_frames = pmm_get_num_frames();
 	pa = RAM_BASE + pfn_to_pa(num_frames);
-	pa = align_up(pa, 1ul << ALIGN_16MB);
+	pa = align_up(pa, ALIGN_16MB);
 	num_frames = (pa - RAM_BASE) >> ALIGN_16MB;
 
 	// The RAM_MAP is a 512MB region. The # of frames that we can support,
@@ -467,8 +467,8 @@ int mmu_map_page(int pid, vpn_t page, pfn_t frame, enum align_bits align,
 
 	va = vpn_to_va(page);
 	pa = pfn_to_pa(frame);
-	if (!is_aligned(va, 1ul << align_arr[pte_level]) ||
-	    !is_aligned(pa, 1ul << align_arr[pte_level]))
+	if (!is_aligned(va, align_arr[pte_level]) ||
+	    !is_aligned(pa, align_arr[pte_level]))
 		return ERR_PARAM;
 
 	mutex_lock(&g_mmu_lock);

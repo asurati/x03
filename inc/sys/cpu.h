@@ -72,7 +72,7 @@ struct cpu {
 static inline
 void tlbi_va(va_t va)
 {
-	va = align_down(va, PAGE_SIZE);
+	va = align_down(va, PAGE_SIZE_BITS);
 	__asm volatile ("mcr	p15, 0, %0, c8, c5, 1" :: "r"(va) : "memory");
 }
 
@@ -114,8 +114,8 @@ void dc_civac(void *p, size_t size)
 
 	start = (va_t)p;
 	end = start + size;
-	start = align_down(start, 32);
-	end = align_up(end, 32);
+	start = align_down(start, 5);
+	end = align_up(end, 5);
 
 	for (; start < end; start += 32)
 		_dc_civac(start);
@@ -134,8 +134,8 @@ void dc_ivac(void *p, size_t size)
 
 	start = (va_t)p;
 	end = start + size;
-	start = align_down(start, 32);
-	end = align_up(end, 32);
+	start = align_down(start, 5);
+	end = align_up(end, 5);
 
 	for (; start < end; start += 32)
 		_dc_ivac(start);
@@ -154,8 +154,8 @@ void dc_cvac(void *p, size_t size)
 
 	start = (va_t)p;
 	end = start + size;
-	start = align_down(start, 32);
-	end = align_up(end, 32);
+	start = align_down(start, 5);
+	end = align_up(end, 5);
 
 	for (; start < end; start += 32)
 		_dc_cvac(start);

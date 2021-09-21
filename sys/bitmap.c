@@ -88,7 +88,7 @@ int bitmap_find_on_off(const struct bitmap *map, int align, int start,
 		return ERR_PARAM;
 
 	incr = 1 << align;
-	start = align_up(start, incr);
+	start = align_up(start, align);
 
 	if (start + num_bits <= 0)
 		return ERR_PARAM;

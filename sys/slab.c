@@ -152,7 +152,7 @@ int slabs_init(va_t *sys_end)
 	// total # of slab_entries == num_pages.
 
 	size = g_sm.num_pages * sizeof(struct slab_entry);
-	size = align_up(size, PAGE_SIZE);
+	size = align_up(size, PAGE_SIZE_BITS);
 	g_sm.base_pages[1] = g_sm.base_pages[0] + (size >> PAGE_SIZE_BITS);
 	return ERR_SUCCESS;
 	(void)sys_end;

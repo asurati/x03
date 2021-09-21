@@ -7,10 +7,11 @@
 // Although these are macros, they are usually used with flags which are also
 // defined as macros. To reduce the all-caps noise, keep these in lower-case.
 
-// a must be a power of 2.
-#define align_down(v, a)		((v) & ~((a) - 1))
-#define align_up(v, a)			(((v) + (a) - 1) & ~((a) - 1))
-#define is_aligned(v, a)		(((v) & ((a) - 1)) == 0)
+// a is a bit-position.
+#define adu_size(a)			(1ul << (a))
+#define align_down(v, a)		((v) & ~(adu_size(a) - 1))
+#define align_up(v, a)			align_down((v) + adu_size(a) - 1, a)
+#define is_aligned(v, a)		(((v) & (adu_size(a) - 1)) == 0)
 
 #if defined(__ASSEMBLER__)
 #define bits_size(f)			(1 << f##_BITS)

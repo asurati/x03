@@ -29,7 +29,7 @@ int fb_map()
 	pfn_t frame;
 	size_t size;
 
-	size = align_up(g_fb_size, PAGE_SIZE);
+	size = align_up(g_fb_size, PAGE_SIZE_BITS);
 	num_pages = size >> PAGE_SIZE_BITS;
 
 	err = vmm_alloc(ALIGN_PAGE, num_pages, &pages);

@@ -145,7 +145,7 @@ int mbox_free_fb(pa_t base)
 	pa_t pa;
 
 	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
-	size = align_up(size, 16);
+	size = align_up(size, 4);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
@@ -182,7 +182,7 @@ int mbox_alloc_fb(pa_t *out_base, size_t *out_size)
 
 	size = sizeof(*td) + sizeof (*tp) + sizeof(*tv) + sizeof(*ta);
 	size += sizeof(*m) + sizeof(uint32_t);
-	size = align_up(size, 16);
+	size = align_up(size, 4);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
@@ -239,7 +239,7 @@ int mbox_set_dom_state(int dom, int is_on)
 	is_on = !!is_on;
 
 	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
-	size = align_up(size, 16);
+	size = align_up(size, 4);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
@@ -277,7 +277,7 @@ int mbox_get_fw_rev(int *out)
 	pa_t pa;
 
 	size = sizeof(*t) + sizeof(*m) + sizeof(uint32_t);
-	size = align_up(size, 16);
+	size = align_up(size, 4);
 	m = malloc(size);
 	if (m == NULL)
 		return ERR_NO_MEM;
