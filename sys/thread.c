@@ -87,7 +87,8 @@ err0:
 void thread_unwait(struct thread *t)
 {
 	struct list_head *rq;
-	assert(t->state == THREAD_STATE_WAITING);
+	assert(t->state == THREAD_STATE_WAITING ||
+	       t->state == THREAD_STATE_SETUP_WAIT);
 
 	rq = cpu_get_ready_queue();
 	t->state = THREAD_STATE_READY;
@@ -97,16 +98,11 @@ void thread_unwait(struct thread *t)
 // Called at IPL_SCHED
 void thread_setup_wait(struct list_head *wq)
 {
-	struct list_head *rq;
 	struct thread *t;
-
-	rq = cpu_get_ready_queue();
-	if (list_is_empty(rq))
-		return;
 
 	t = cpu_get_curr_thread();
 	assert(t->state == THREAD_STATE_RUNNING);
-	t->state = THREAD_STATE_WAITING;
+	t->state = THREAD_STATE_SETUP_WAIT;
 	list_add_tail(wq, &t->wait_entry);
 }
 
@@ -115,14 +111,19 @@ void thread_wait()
 {
 	struct thread *curr, *next, *idle;
 	struct list_head *rq, *e;
-	struct thread *thread_switch(struct thread *curr, struct thread *next);
+	void	thread_switch(struct thread *curr, struct thread *next);
 
 	curr = cpu_get_curr_thread();
 	idle = cpu_get_idle_thread();
 
+	// Valid only on uniprocessor.
+	assert(curr->state == THREAD_STATE_SETUP_WAIT);
+
 	rq = cpu_get_ready_queue();
-	if (list_is_empty(rq))
+	if (list_is_empty(rq)) {
+		curr->state = THREAD_STATE_RUNNING;
 		return;
+	}
 
 	e = list_del_head(rq);
 	next = list_entry(e, struct thread, wait_entry);
@@ -139,6 +140,9 @@ void thread_wait()
 		curr->state = THREAD_STATE_READY;
 		list_add_tail(rq, &curr->wait_entry);
 	}
-	curr = thread_switch(curr, next);
-	cpu_set_curr_thread(curr);
+	// The thread_switch may not return to thread_wait. It may return to
+	// thread_enter, for instance. Either have all such return points call
+	// cpu_set_curr_thread, or call it before the thread is changed.
+	cpu_set_curr_thread(next);
+	thread_switch(curr, next);
 }
