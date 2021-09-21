@@ -46,6 +46,58 @@ typedef int32_t				pfn_t;
 
 // 16MB, 1MB, 64KB
 
+// Fields in page dir/table entries.
+#define PDE_T_POS			0
+#define PDE_NLTA_POS			10
+#define PDE_T_BITS			1
+#define PDE_NLTA_BITS			22
+
+#define PTE_SN_POS			1
+#define PTE_SN_B_POS			2
+#define PTE_SN_C_POS			3
+#define PTE_SN_XN_POS			4
+#define PTE_SN_AP_POS			10
+#define PTE_SN_TEX_POS			12
+#define PTE_SN_APX_POS			15
+#define PTE_SN_S_POS			16
+#define PTE_SN_NG_POS			17
+#define PTE_SSN_POS			18
+#define PTE_SN_BASE_POS			20
+#define PTE_SSN_BASE_POS		24
+#define PTE_SN_BITS			1
+#define PTE_SN_B_BITS			1
+#define PTE_SN_C_BITS			1
+#define PTE_SN_XN_BITS			1
+#define PTE_SN_AP_BITS			2
+#define PTE_SN_TEX_BITS			3
+#define PTE_SN_APX_BITS			1
+#define PTE_SN_S_BITS			1
+#define PTE_SN_NG_BITS			1
+#define PTE_SSN_BITS			1
+#define PTE_SN_BASE_BITS		12
+#define PTE_SSN_BASE_BITS		8
+
+#define PTE_LP_POS			0
+#define PTE_B_POS			2
+#define PTE_C_POS			3
+#define PTE_AP_POS			4
+#define PTE_APX_POS			9
+#define PTE_S_POS			10
+#define PTE_NG_POS			11
+#define PTE_TEX_POS			12
+#define PTE_XN_POS			15
+#define PTE_BASE_POS			16
+#define PTE_LP_BITS			1
+#define PTE_B_BITS			1
+#define PTE_C_BITS			1
+#define PTE_AP_BITS			2
+#define PTE_APX_BITS			1
+#define PTE_S_BITS			1
+#define PTE_NG_BITS			1
+#define PTE_TEX_BITS			3
+#define PTE_XN_BITS			1
+#define PTE_BASE_BITS			16
+
 // Device base PAs.
 #define IO_BASE				0x20000000ul
 #define UART_BASE			(IO_BASE + 0x201000)
