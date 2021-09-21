@@ -42,32 +42,32 @@ struct cs_vertex {
 	float				wcr;
 } __attribute__((packed));
 
-#if 0
 // In screen coordinates. x and y in 12.4 fixed point format.
 static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
-	{320 << 4, 292 << 4, 2.5, 0.5},
-	{265 << 4, 187 << 4, 2.5, 0.5},
-	{374 << 4, 187 << 4, 2.5, 0.5},
+	{320 << 4, 292 << 4, 0.75, 0.5},
+	{265 << 4, 187 << 4, 0.75, 0.5},
+	{374 << 4, 187 << 4, 0.75, 0.5},
 };
 
 static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
-	{0, 0.44, 1, 2, 320 << 4, 292 << 4, 2.5, 0.5},
-	{-0.34, -0.44, 1, 2, 265 << 4, 187 << 4, 2.5, 0.5},
-	{0.34, -0.44, 1, 2, 374 << 4, 187 << 4, 2.5, 0.5},
+	{0, 0.44,	1, 2, 320 << 4, 292 << 4, 0.75, 0.5},
+	{-0.34, -0.44,	1, 2, 265 << 4, 187 << 4, 0.75, 0.5},
+	{0.34, -0.44,	1, 2, 374 << 4, 187 << 4, 0.75, 0.5},
+};
+#if 0
+static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
+	{320 << 4, (346 << 4) | 9, 1.0, 0.5},
+	{(211 << 4) | 3, (134 << 4) | 6, 1.0, 0.5},
+	{(428 << 4) | 11, (134 << 4) | 6, 1.0, 0.5},
+};
+
+// zs is allowed to be in the range [0,1]
+static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
+	{0.0, 0.44,	-1.0, 2.0,	320 << 4, (345 << 4) | 9, 1.0, 0.5},
+	{-0.34, -0.44,	-1.0, 2.0,	(211 << 4) | 3, (134 << 4) | 6, 1.0, 0.5},
+	{0.34, -0.44,	-1.0, 2.0,	(428 << 4) | 11, (134 << 4) | 6, 1.0, 0.5},
 };
 #endif
-static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
-	{320 << 4, (346 << 4) | 9, 1.0, 1.0},
-	{(211 << 4) | 3, (134 << 4) | 6, 1.0, 1.0},
-	{(428 << 4) | 11, (134 << 4) | 6, 1.0, 1.0},
-};
-
-static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
-	{0.0, 0.44,	-1.0, 1.0,	320 << 4, (345 << 4) | 9, 1.0, 1.0},
-	{-0.34, -0.44,	-1.0, 1.0,	(211 << 4) | 3, (134 << 4) | 6, 1.0, 1.0},
-	{0.34, -0.44,	-1.0, 1.0,	(428 << 4) | 11, (134 << 4) | 6, 1.0, 1.0},
-};
-
 int d5_run()
 {
 	int err, off, x, y;
@@ -92,11 +92,11 @@ int d5_run()
 	struct v3dcr_store_mstcb		*str;
 	struct v3dcr_store_tb_gen		*stg;
 
-	static char v3dcr[PAGE_SIZE] __attribute__((aligned(32)));
+	static char v3dcr[PAGE_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	// Alignment enforced by TBMC/112.
 	static uint32_t tsda[(NUM_TILES_Y * NUM_TILES_X * 48) >> 2]
-		__attribute__((aligned(32)));
+		__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	// Alignment seems to be enfored by the max. tile allocation block
 	// size of 256 bytes. This buffer is the binning memory pool
@@ -105,7 +105,7 @@ int d5_run()
 
 	// Alignment enforced by NVSS/65.
 	static struct v3dcr_gl_shader_state_rec	ssr
-		__attribute__((aligned(32)));
+		__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t cs_code[] __attribute__((aligned(8))) = {
 		0x00701a00, 0xe0020c67,
