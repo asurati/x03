@@ -66,9 +66,10 @@ int d4_run()
 
 	static char v3dcr[PAGE_SIZE] __attribute__((aligned(32)));
 
-	// Alignment enforced by TBMC/112.
+	// 16-byte Alignment enforced by TBMC/112. Provide a CACHE_LINE_SIZE
+	// alignment.
 	static uint32_t tsda[(NUM_TILES_Y * NUM_TILES_X * 48) >> 2]
-		__attribute__((aligned(32)));
+		__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	// Alignment seems to be enfored by the max. tile allocation block
 	// size of 256 bytes. This buffer is the binning memory pool
@@ -76,7 +77,7 @@ int d4_run()
 	static uint32_t ta[PAGE_SIZE >> 2] __attribute__((aligned(256)));
 
 	// Alignment enforced by NVSS/65.
-	static char ssr_buf[32] __attribute__((aligned(32)));
+	static char ssr_buf[32] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
 		0x018c0dc0, 0xd0020827,

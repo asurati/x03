@@ -25,6 +25,9 @@ enum ipl {
 	IPL_THREAD,
 };
 
+// 8-word cache line length.
+#define CACHE_LINE_SIZE			32
+
 #define PSR_I_POS			7
 #define PSR_I_BITS			1
 
@@ -109,7 +112,7 @@ void dc_civac(void *p, size_t size)
 	start = (va_t)p;
 	end = start + size;
 
-	for (; start < end; start += 32)
+	for (; start < end; start += CACHE_LINE_SIZE)
 		__asm volatile ("mcr	p15, 0, %0, c7, c14, 1" :: "r"(start));
 }
 
@@ -121,7 +124,7 @@ void dc_ivac(void *p, size_t size)
 	start = (va_t)p;
 	end = start + size;
 
-	for (; start < end; start += 32)
+	for (; start < end; start += CACHE_LINE_SIZE)
 		__asm volatile ("mcr	p15, 0, %0, c7, c6, 1" :: "r"(start));
 }
 
@@ -133,7 +136,7 @@ void dc_cvac(void *p, size_t size)
 	start = (va_t)p;
 	end = start + size;
 
-	for (; start < end; start += 32)
+	for (; start < end; start += CACHE_LINE_SIZE)
 		__asm volatile ("mcr	p15, 0, %0, c7, c10, 1" :: "r"(start));
 }
 

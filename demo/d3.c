@@ -19,7 +19,7 @@ int d3_run()
 
 	// out_buf must be cache-line aligned and its size an integral
 	// multiple of the cache-line size. See d2.c.
-	static uint32_t out_buf[64] __attribute__((aligned(32)));
+	static uint32_t out_buf[64] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
 		0x15800dc0, 0xd0020827,

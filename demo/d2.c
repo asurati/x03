@@ -59,7 +59,7 @@ int d2_run()
 	// before reading from the memory, but if there are variables which
 	// share the cache-line with out_buf, we may lose their most recent
 	// values because of the invalidate.
-	static uint32_t out_buf[64] __attribute__((aligned(32)));
+	static uint32_t out_buf[64] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
 		0x15800dc0, 0xd0020827,
