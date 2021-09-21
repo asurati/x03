@@ -17,14 +17,16 @@ struct virt_mem_manager {
 
 static struct virt_mem_manager g_vmm;
 
-// VMM_SIZE is 512MB. That is 1ul << (29 - 16) = 8192 pages.
-// 8192 bits is 1024 bytes. So a bitmap of 1024 bytes is needed.
-// The start of this VA space is at VMM_BASE. This space excludes the kernel,
-// and contains only dynamically allocated regions.
+// Allocate a VA space of size VMM_SIZE, which is set to 32GB on 64bit archs,
+// and 512MB on 32bit archs. 32GB can be managed by a single 64KB Page.
+// 512MB can be managed by 1024 bytes.
+// VMM_SIZE >> (PAGE_SIZE_BITS + 3) gives the # of bytes.
+
 int vmm_init(va_t *sys_end)
 {
 	int err;
-	static uint64_t bits[1024 >> 3] = {0};	// aligned at 64-bits.
+	static char bits[VMM_SIZE >> (PAGE_SIZE_BITS + 3)]
+		__attribute__((aligned(8))) = {0};
 
 	mutex_init(&g_vmm.lock);
 
