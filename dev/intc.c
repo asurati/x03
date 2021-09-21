@@ -9,20 +9,18 @@
 #include <sys/vmm.h>
 #include <sys/pmm.h>
 
-struct intc_regs {
-	uint32_t			irq0_pending;
-	uint32_t			irq1_pending;
-	uint32_t			irq2_pending;
-	uint32_t			fiq_ctrl;
-	uint32_t			irq1_enable;
-	uint32_t			irq2_enable;
-	uint32_t			irq0_enable;
-	uint32_t			irq1_disable;
-	uint32_t			irq2_disable;
-	uint32_t			irq0_disable;
-};
+#define INTC_IRQ0_PENDING		(0 >> 2)
+#define INTC_IRQ1_PENDING		(0x4 >> 2)
+#define INTC_IRQ2_PENDING		(0x8 >> 2)
+#define INTC_FIQ_CTRL			(0xc >> 2)
+#define INTC_IRQ1_ENABLE		(0x10 >> 2)
+#define INTC_IRQ2_ENABLE		(0x14 >> 2)
+#define INTC_IRQ0_ENABLE		(0x18 >> 2)
+#define INTC_IRQ1_DISABLE		(0x1c >> 2)
+#define INTC_IRQ2_DISABLE		(0x20 >> 2)
+#define INTC_IRQ0_DISABLE		(0x24 >> 2)
 
-static volatile struct intc_regs *g_intc_regs;
+static volatile uint32_t *g_intc_regs;
 
 struct irq_info {
 	int				reg_enable;
@@ -33,23 +31,23 @@ struct irq_info {
 
 static struct irq_info g_irqs[NUM_IRQS] = {
 	[IRQ_TIMER3] = {
-		offsetof(struct intc_regs, irq1_enable) / 4,
-		offsetof(struct intc_regs, irq1_disable) / 4,
-		offsetof(struct intc_regs, irq1_pending) / 4,
+		INTC_IRQ1_ENABLE,
+		INTC_IRQ1_DISABLE,
+		INTC_IRQ1_PENDING,
 		1ul << 3
 	},
 
 	[IRQ_VC_3D] = {
-		offsetof(struct intc_regs, irq1_enable) / 4,
-		offsetof(struct intc_regs, irq1_disable) / 4,
-		offsetof(struct intc_regs, irq1_pending) / 4,
+		INTC_IRQ1_ENABLE,
+		INTC_IRQ1_DISABLE,
+		INTC_IRQ1_PENDING,
 		1ul << 10
 	},
 
 	[IRQ_ARM_MAILBOX] = {
-		offsetof(struct intc_regs, irq0_enable) / 4,
-		offsetof(struct intc_regs, irq0_disable) / 4,
-		offsetof(struct intc_regs, irq0_pending) / 4,
+		INTC_IRQ0_ENABLE,
+		INTC_IRQ0_DISABLE,
+		INTC_IRQ0_PENDING,
 		1ul << 1
 	}
 };
@@ -73,15 +71,15 @@ int intc_init()
 		goto err1;
 	va = vpn_to_va(page);
 	va += pa & (PAGE_SIZE - 1);
-	g_intc_regs = (volatile struct intc_regs *)va;
+	g_intc_regs = (volatile uint32_t *)va;
 
 	// Disable FIQ generation.
-	g_intc_regs->fiq_ctrl = 0;
+	g_intc_regs[INTC_FIQ_CTRL] = 0;
 
 	// Disable all IRQs
-	g_intc_regs->irq0_disable = -1;
-	g_intc_regs->irq1_disable = -1;
-	g_intc_regs->irq2_disable = -1;
+	g_intc_regs[INTC_IRQ0_DISABLE] = -1;
+	g_intc_regs[INTC_IRQ1_DISABLE] = -1;
+	g_intc_regs[INTC_IRQ2_DISABLE] = -1;
 	return ERR_SUCCESS;
 err1:
 	vmm_free(page, 1);
@@ -93,14 +91,12 @@ static
 int intc_enable_disable_irq(enum irq irq, char is_enable)
 {
 	struct irq_info *ii;
-	volatile uint32_t *regs;
 
 	ii = &g_irqs[irq];
-	regs = (volatile uint32_t *)g_intc_regs;
 	if (is_enable)
-		regs[ii->reg_enable] |= ii->mask;
+		g_intc_regs[ii->reg_enable] |= ii->mask;
 	else
-		regs[ii->reg_disable] |= ii->mask;
+		g_intc_regs[ii->reg_disable] |= ii->mask;
 	return ERR_SUCCESS;
 }
 
@@ -119,14 +115,12 @@ uint32_t intc_get_pending()
 	int i;
 	uint32_t mask;
 	struct irq_info *ii;
-	volatile uint32_t *regs;
 
-	regs = (volatile uint32_t *)g_intc_regs;
 	mask = 0;
 
 	for (i = 0; i < NUM_IRQS; ++i) {
 		ii = &g_irqs[i];
-		if (regs[ii->reg_pending] & ii->mask)
+		if (g_intc_regs[ii->reg_pending] & ii->mask)
 			mask |= 1ul << i;
 	}
 	return mask;

@@ -14,15 +14,12 @@
 
 #define CON_BUF_LEN			256
 
-struct con_regs {
-	uint32_t			data;
-	uint32_t			res[5];
-	uint32_t			flag;
-};
+#define CON_DR				(0 >> 2)
+#define CON_FR				(0x18 >> 2)
 
 static struct spin_lock g_con_lock;
 static int g_con_init;
-static volatile struct con_regs *g_con_regs;
+static volatile uint32_t *g_con_regs;
 
 void _con_out(const char *str, int len)
 {
@@ -30,9 +27,9 @@ void _con_out(const char *str, int len)
 
 	for (i = 0; i < len; ++i) {
 		// Loop until there's space in Tx FIFO.
-		while (g_con_regs->flag & 0x20)
+		while (g_con_regs[CON_FR] & 0x20)
 			;
-		g_con_regs->data = str[i];
+		g_con_regs[CON_DR] = str[i];
 	}
 }
 
@@ -87,7 +84,7 @@ int con_init()
 		goto err1;
 	va = vpn_to_va(page);
 	va += pa & (PAGE_SIZE - 1);
-	g_con_regs = (volatile struct con_regs *)va;
+	g_con_regs = (volatile uint32_t *)va;
 	g_con_init = 1;
 	return ERR_SUCCESS;
 err1:
