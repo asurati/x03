@@ -13,7 +13,6 @@
 #include <sys/pmm.h>
 #include <sys/vmm.h>
 #include <sys/mutex.h>
-#include <sys/slab.h>
 
 // Max # of objects in any 64KB page is 64KB / 8 = 8192 = 0x2000. This value
 // can fit inside a short.

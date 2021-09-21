@@ -9,7 +9,6 @@
 #include <sys/cpu.h>
 #include <sys/mmu.h>
 #include <sys/pmm.h>
-#include <sys/slab.h>
 #include <sys/vmm.h>
 
 #include <dev/con.h>
@@ -23,7 +22,12 @@ int kmain()
 	size_t fb_size;
 	va_t sys_end;
 	extern char _sys_end;
+	int	pmm_init(va_t *sys_end);
+	int	vmm_init(va_t *sys_end);
 	int	mmu_init(va_t *sys_end);
+	int	slabs_init(va_t *sys_end);
+
+	int	pmm_post_init(va_t sys_end);
 	int	mmu_post_init(va_t sys_end);
 	int	intc_init();
 	int	tmr_init();

@@ -6,8 +6,6 @@
 
 #include <sys/mmu.h>
 
-int	pmm_init(va_t *sys_end);
-int	pmm_post_init(va_t sys_end);
 int	pmm_alloc(enum align_bits align, int num_frames, pfn_t *out);
 int	pmm_free(pfn_t frame, int num_frames);
 int	pmm_get_ctx(pfn_t frame, void **ctx);
