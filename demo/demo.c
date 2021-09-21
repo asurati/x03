@@ -9,8 +9,8 @@ int demo_run()
 	int	d1_run();
 	int	d2_run();
 	int	d3_run();
-	int	d4_run();
-	int	d5_run();
+	int	d50_run();
+	int	d51_run();
 
 #if 0
 	err = d1_run();
@@ -28,14 +28,14 @@ int demo_run()
 	if (err)
 		return err;
 
-	err = d4_run();
-	con_out("d4: err %x", err);
+	err = d50_run();
+	con_out("d50: err %x", err);
 	if (err)
 		return err;
 #endif
 
-	err = d5_run();
-	con_out("d5: err %x", err);
+	err = d51_run();
+	con_out("d51: err %x", err);
 	if (err)
 		return err;
 	return err;

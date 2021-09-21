@@ -68,7 +68,18 @@ static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
 	{0.34, -0.44,	-1.0, 2.0,	(428 << 4) | 11, (134 << 4) | 6, 1.0, 0.5},
 };
 #endif
-int d5_run()
+
+#if 0
+static
+void print_tile(int y, int x, uint32_t *arr)
+{
+	con_out("pt:[%d,%d], %x %x %x %x %x %x %x %x", y, x,
+		arr[0], arr[1], arr[2], arr[3],
+		arr[4], arr[5], arr[6], arr[7]);
+}
+#endif
+
+int d51_run()
 {
 	int err, off, x, y;
 	va_t tva;
@@ -365,6 +376,7 @@ int d5_run()
 			br->addr = va_to_ba(tva);
 
 			str->id = 24;
+			// print_tile(y, x, (uint32_t *)tva);
 		}
 	}
 

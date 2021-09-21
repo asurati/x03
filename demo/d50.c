@@ -40,7 +40,7 @@ static const struct vertex verts[] __attribute__((aligned(32))) = {
 	{608 << 4,	300 << 4,	0.5,	1.0, 0.0, 0.0, 1.0},
 };
 
-int d4_run()
+int d50_run()
 {
 	int err, off, x, y;
 	va_t tva;
