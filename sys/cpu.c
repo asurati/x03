@@ -214,6 +214,5 @@ void cpu_init()
 	list_init(&cpu->ready_queue);
 	cpu_set(cpu);
 	mcr_vbar((reg_t)excptn_vector);
-	cpu_lower_ipl(IPL_THREAD, 0);
 	cpu->online = 1;
 }

@@ -19,6 +19,7 @@ int thread_idle_thread()
 
 	t = cpu_get_curr_thread();
 	t->state = THREAD_STATE_RUNNING;
+	cpu_lower_ipl(IPL_THREAD, 0);
 
 	err = kmain();
 	if (err)
