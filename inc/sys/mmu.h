@@ -44,7 +44,9 @@ typedef int32_t				pfn_t;
 #define PD0_SIZE			(1ul << (PD0_BITS + 2))
 #define PD1_SIZE			(1ul << (PD1_BITS + 2))
 
-// 16MB, 1MB, 64KB
+// Each 16-entries inside a PD1 handles a 64KB area.
+// Each 16-entries inside a PD0 handles a 16MB area.
+// Each entry inside a PD0 handles a 1MB area.
 
 // Fields in page dir/table entries.
 #define PDE_T_POS			0
