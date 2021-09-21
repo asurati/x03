@@ -4,17 +4,8 @@
 #ifndef SYS_MMU_H
 #define SYS_MMU_H
 
-#define ASM_VA_BASE			0x80000000
-#define ASM_RAM_BASE			0
-#define ASM_LDR_BASE			(ASM_RAM_BASE + 0x10000)
-// #define ASM_LDR_BASE			ASM_RAM_BASE + 0x8000
+#include <sys/mmu.S.h>
 
-#define PAGE_SIZE_BITS			16
-
-// Skip the first 4MB of VA and PA space, as it stores the pkg.bin
-#define ASM_SYS_BASE			(ASM_VA_BASE + (1 << 22))
-
-#if !defined(__ASSEMBLER__)
 #include <stdint.h>
 
 #include <sys/elf.h>
@@ -151,5 +142,4 @@ int mmu_map_page(int pid, vpn_t page, pfn_t frame, enum align_bits align,
 		 int flags);
 
 int mmu_unmap_page(int pid, vpn_t page);
-#endif	// __ASSEMBLER__
 #endif
