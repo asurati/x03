@@ -89,6 +89,7 @@ int d3_run()
 	vpr |= bits_set(VPR_V32_ADDR_X, 15);
 	vpr |= bits_set(VPR_SIZE, 2);
 	vpr |= bits_set(VPR_STRIDE, 16);	// Increments y
+	vpr |= bits_set(VPR_NUM, 4);
 	unif[2] = vpr;	// One vpr_setup for 4 reads.
 
 	// NOT the vectors
