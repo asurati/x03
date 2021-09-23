@@ -33,6 +33,20 @@ int d4_run()
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
 		0x15c00dc0, 0xd0020827,
+		0x00000050, 0xf0f807e7,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
+		0x00000a00, 0xe0021c67,
+		0x15767d80, 0x10020c27,
+		0x80904000, 0xe0021c67,
+		0x15800dc0, 0xd0020827,
+		0x159e7000, 0x10021ca7,
+		0x159f2e00, 0x100209e7,
+		0x159c1fc0, 0xd00209a7,
+		0x009e7000, 0x300009e7,
+		0x009e7000, 0x100009e7,
+		0x009e7000, 0x100009e7,
 		0x00000000, 0xe0020767,
 		0x00010001, 0xe2020867,
 		0x00000000, 0xe00208a7,
@@ -96,18 +110,10 @@ int d4_run()
 		0x15767cc0, 0x10020767,
 		0xc09fd002, 0xd00049e0,
 		0xc09f100a, 0xd00049e1,
+		0x00000000, 0xf0f7e9e7,
 		0x149e7040, 0x100208e7,
 		0x15767cc0, 0x10020767,
-		0x00000a00, 0xe0021c67,
-		0x15767d80, 0x10020c27,
-		0x80904000, 0xe0021c67,
-		0x15800dc0, 0xd0020827,
-		0x159e7000, 0x10021ca7,
-		0x159f2e00, 0x100209e7,
-		0x159c1fc0, 0xd00209a7,
-		0x009e7000, 0x300009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
+		0x15767d80, 0x10020827,
 	};
 
 	srand(tmr_get_ctr());
@@ -161,6 +167,25 @@ li	vpr_setup, -, 0x100a00;
 ;;;	# 3-instruction delay slot before reading.
 ori	r0, vpr, 0; # matrix inside r0
 
+bl	a31, transpose; #a31 is the link register
+;;;
+
+
+# Write into VPM.
+li	vpw_setup, -, 0xa00;
+or	vpw, a29, a29;
+
+# Write into RAM.
+li	vdw_setup, -, 0x80904000;
+ori	r0, uni_rd, 0;			# Address
+or	vdw_addr, r0, r0;
+or	-, vdw_wait, r0;
+
+ori	host_int, 1, 1;
+pe;;;
+
+
+transpose:
 li	a29, -, 0;		# output
 lis	r1, -, 0x10001;		# mask
 li	r2, -, 0;
@@ -272,19 +297,8 @@ or	a29, a29, r3;
 #m                                              1
 v8asrot13	r0, r0, r2;	# Rotate input
 v8asrot1	r1, r1, r2;	# Rotate mask
+b	a31;
 and	r3, r0, r1;
 or	a29, a29, r3;
-
-# Write into VPM.
-li	vpw_setup, -, 0xa00;
-or	vpw, a29, a29;
-
-# Write into RAM.
-li	vdw_setup, -, 0x80904000;
-ori	r0, uni_rd, 0;			# Address
-or	vdw_addr, r0, r0;
-or	-, vdw_wait, r0;
-
-ori	host_int, 1, 1;
-pe;;;
+or	r0, a29, a29;
 #endif
