@@ -29,6 +29,19 @@ struct vertex {
 } __attribute__((packed));
 
 // In screen coordinates. x and y in 12.4 fixed point format.
+// When these coordinates are given relative to the upper-left corner, treating
+// that corner as (0,0), the output is as expected. Same goes with Viewport
+// Offset Centre value, and the Clip Window left and bottom value.
+//
+// For e.g. When ClipWindow bottom is set to 40, a small bit, about 8 pixels
+// in height is clipped from the top of the triangle, since the top of the
+// triangle is at 32. Considering these values from the upper-left corner of
+// the monitor screen makes sense.
+//
+// The ViewPort Offset Centre (0,0) can be considered to be at the upper left
+// corner of the monitor screen. Changing it to say (30, 120) shifts the
+// rendered image on the screen to the right and down, which is as expected
+// when treating the coordinates as belonging to the upper-left origin system.
 static const struct vertex verts[] __attribute__((aligned(32))) = {
 	// top
 	{320 << 4,	32 << 4,	0.5,	1.0, 1.0, 0.0, 0.0},
