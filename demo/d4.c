@@ -38,7 +38,7 @@ int d4_run()
 		0x009e7000, 0x100009e7,
 		0x009e7000, 0x100009e7,
 		0x00000a00, 0xe0021c67,
-		0x15767d80, 0x10020c27,
+		0x159e7000, 0x10020c27,
 		0x80904000, 0xe0021c67,
 		0x15800dc0, 0xd0020827,
 		0x159e7000, 0x10021ca7,
@@ -109,11 +109,10 @@ int d4_run()
 		0x149e7040, 0x100208e7,
 		0x15767cc0, 0x10020767,
 		0xc09fd002, 0xd00049e0,
-		0xc09f100a, 0xd00049e1,
 		0x00000000, 0xf0f7e9e7,
+		0xc09f100a, 0xd00049e1,
 		0x149e7040, 0x100208e7,
-		0x15767cc0, 0x10020767,
-		0x15767d80, 0x10020827,
+		0x15767cc0, 0x10020827,
 	};
 
 	srand(tmr_get_ctr());
@@ -170,10 +169,9 @@ ori	r0, vpr, 0; # matrix inside r0
 bl	a31, transpose; #a31 is the link register
 ;;;
 
-
 # Write into VPM.
 li	vpw_setup, -, 0xa00;
-or	vpw, a29, a29;
+or	vpw, r0, r0;
 
 # Write into RAM.
 li	vdw_setup, -, 0x80904000;
@@ -296,9 +294,8 @@ or	a29, a29, r3;
 # m0 m1 m2 m3 m4 m5 m6 m7 m8 m9 ma mb mc md me mf
 #m                                              1
 v8asrot13	r0, r0, r2;	# Rotate input
-v8asrot1	r1, r1, r2;	# Rotate mask
 b	a31;
+v8asrot1	r1, r1, r2;	# Rotate mask
 and	r3, r0, r1;
-or	a29, a29, r3;
-or	r0, a29, a29;
+or	r0, a29, r3;
 #endif
