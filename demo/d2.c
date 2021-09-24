@@ -39,7 +39,7 @@ uint32_t d2_get_vdw_setup(int y, int x)
 	vdw = 0;
 	vdw |= bits_set(VDW_ADDR_Y, y);
 	vdw |= bits_set(VDW_ADDR_X, x);
-	vdw |= bits_set(VDW_DEPTH, 64);
+	vdw |= bits_set(VDW_DEPTH, 16);
 	vdw |= bits_set(VDW_UNITS, 1);
 	vdw |= bits_set(VDW_ID, 2);
 	return vdw;
