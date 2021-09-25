@@ -42,15 +42,72 @@ struct vertex {
 // corner of the monitor screen. Changing it to say (30, 120) shifts the
 // rendered image on the screen to the right and down, which is as expected
 // when treating the coordinates as belonging to the upper-left origin system.
+
+// The below window coordinates are for a triangle with object coordinates
+// top		(0, 3, -2, 1);
+// left		(-3, -1, -2, 1);
+// right	(3, -1, -2, 1);
+//
+// Camera at	(0,0,5);
+// The eye/view coordinates are thus:
+// top		(0, 3, -7, 1);
+// left		(-3, -1, -7, 1);
+// right	(3, -1, -7, 1);
+//
+// Frustum:
+// Near plane at -1, so n = 1.
+// Far plane at -10, so f = 10.
+
+// 640x480 aspect ratio = 4:3
+
+// The near plane's dimensions are:
+// Width = 8, Height = 6
+// Thus, r = 4, t = 3.
+
+// The perspective projection matrix is thus:
+
+//	1/4	0	0	0
+//	0	1/3	0	0
+//	0	0	-11/9	-20/9
+//	0	0	-1	0
+
+// Clip coordinates:
+// top		(0,	1,	57/9,	7)	wc = 7
+// left		(-3/4,	-1/3,	57/9,	7)	wc = 7
+// right	(3/4,	-1/3,	57/9,	7)	wc = 7
+
+// NDC coordinates:
+// top		(0,	1/7,	57/63)
+// left		(-3/28,	-1/21,	57/63)
+// right	(3/28,	-1/21,	57/63)
+
+// Viewport (0, 0, 640, 480);
+// n = 0.0, f = 1.0 (glDepthRange)
+
+// Flip the sign of the y coordinates, so that the image is right side up on
+// render.
+
+// top		(0,	-1/7,	57/63)
+// left		(-3/28,	1/21,	57/63)
+// right	(3/28,	1/21,	57/63)
+
+// Window coordinates:
+// top		(320,		1440/7,	60/63);
+// left		(2000/7,	1760/7,	60/63);
+// right	(2480/7,	1760/7,	60/63);
+
+// Xs, Ys in 12.4 fixed point format:
+// top		(320<<4,	(205<<4)|11,	60/63);
+// left		((285<<4)|11,	(251<<4)|6,	60/63);
+// right	((354<<4)|4,	(251<<4)|6,	60/63);
+
 static const struct vertex verts[] __attribute__((aligned(32))) = {
 	// top
-	{320 << 4,	32 << 4,	0.5,	1.0, 1.0, 0.0, 0.0},
-
+	{320<<4,	(205<<4)|11,	60.0/63, 1.0/7,	1.0, 0.0, 0.0},
 	// left
-	{32 << 4,	300 << 4,	0.5,	1.0, 0.0, 1.0, 0.0},
-
+	{(285<<4)|11,	(251<<4)|6,	60.0/63, 1.0/7,	0.0, 1.0, 0.0},
 	// right
-	{608 << 4,	300 << 4,	0.5,	1.0, 0.0, 0.0, 1.0},
+	{(354<<4)|4,	(251<<4)|6,	60.0/63, 1.0/7,	0.0, 0.0, 1.0},
 };
 
 int d50_run()
@@ -93,34 +150,28 @@ int d50_run()
 	static char ssr_buf[32] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
-		0x018c0dc0, 0xd0020827,
+		0x203e303e, 0x100049e0,
 		0x019e7140, 0x10020827,
-		0x018c0dc0, 0xd0020867,
+		0x203e303e, 0x100049e1,
 		0x019e7340, 0x10020867,
-		0x018c0dc0, 0xd00208a7,
+		0x203e303e, 0x100049e2,
 		0x019e7540, 0x100208a7,
-
-		0x000000ff, 0xe00248e7,
+		0x000000ff, 0xe00208e7,
 		0x089e76c0, 0x100208e7,
 		0x209e7003, 0x100049e0,
 		0x209e700b, 0x100049e1,
 		0x209e7013, 0x100049e2,
-
 		0x079e7000, 0x10020827,
 		0x079e7240, 0x10020867,
 		0x079e7480, 0x100208a7,
-
 		0x119c81c0, 0xd0020827,
 		0x119c81c0, 0xd0020827,
 		0x119c83c0, 0xd0020867,
-
 		0x159e7040, 0x10020827,
 		0x159e7080, 0x10020827,
-
-		0xff000000, 0xe0024867,
+		0xff000000, 0xe0020867,
 		0x159e7040, 0x10020827,
 		0x159e7000, 0x50020ba7,
-
 		0x159c1fc0, 0xd00209a7,
 		0x009e7000, 0x300009e7,
 		0x009e7000, 0x100009e7,
@@ -295,15 +346,17 @@ int d50_run()
 
 #if 0
 # RGB
-faddi	r0, vary_rd, 0;
+fmul	r0, vary_rd, a15;	# a15 has W.
 fadd	r0, r0, r5;
 
-faddi	r1, vary_rd, 0;
+fmul	r1, vary_rd, a15;
 fadd	r1, r1, r5;
 
-faddi	r2, vary_rd, 0;
+fmul	r2, vary_rd, a15;
 fadd	r2, r2, r5;
 
+# TODO utilize mul output pack facility to convert floating point output into
+# a 8-bit colour in the range [0, 255].
 # x 255.0
 li	r3, -, 255;
 itof	r3, r3, r3;
