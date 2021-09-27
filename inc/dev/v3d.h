@@ -41,6 +41,8 @@
 #define V3D_BPOA			(0x308 >> 2)
 #define V3D_BPOS			(0x30c >> 2)
 
+#define V3D_SQRSV0			(0x410 >> 2)
+#define V3D_SQRSV1			(0x414 >> 2)
 #define V3D_SRQPC			(0x430 >> 2)
 #define V3D_SRQUA			(0x434 >> 2)
 #define V3D_SRQUL			(0x438 >> 2)
