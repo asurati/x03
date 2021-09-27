@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 static const uint32_t vs_code[] __attribute__((aligned(8))) = {
-	0x15cc0dc0, 0xd00209e7,
 	0x00701a00, 0xe0020c67,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
@@ -16,23 +15,22 @@ static const uint32_t vs_code[] __attribute__((aligned(8))) = {
 	0x15c00dc0, 0xd0021027,
 	0x15c00dc0, 0xd0021067,
 	0x15c00dc0, 0xd00210a7,
-	0x159c0fc0, 0xd0020ce7,
-	0x000001c8, 0xf0f807e7,
+	0x000001b8, 0xf0f807e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x159e7000, 0x10020127,
-	0x000001a0, 0xf0f807e7,
+	0x00000190, 0xf0f807e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x159e7000, 0x10020167,
-	0x00000178, 0xf0f807e7,
+	0x00000168, 0xf0f807e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x159e7000, 0x100201a7,
-	0x00000150, 0xf0f807e7,
+	0x00000140, 0xf0f807e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
 	0x009e7000, 0x100009e7,
@@ -65,7 +63,6 @@ static const uint32_t vs_code[] __attribute__((aligned(8))) = {
 	0x11048dc0, 0xd0020827,
 	0x119c81c0, 0xd0020827,
 	0x15027c00, 0x10020027,
-	0x15cc0dc0, 0xd00209e7,
 	0x00001a00, 0xe0021c67,
 	0x15027d80, 0x10020c27,
 	0x150a7d80, 0x10020c27,
@@ -73,7 +70,6 @@ static const uint32_t vs_code[] __attribute__((aligned(8))) = {
 	0x159c0fc0, 0x10020c27,
 	0x159c1fc0, 0x10020c27,
 	0x159c2fc0, 0x10020c27,
-	0x159c0fc0, 0xd0020ce7,
 	0x159c1fc0, 0xd00209a7,
 	0x009e7000, 0x300009e7,
 	0x009e7000, 0x100009e7,
@@ -96,10 +92,6 @@ static const uint32_t vs_code[] __attribute__((aligned(8))) = {
 
 // Vertex Shader
 #if 0
-#;;
-#wsb;
-
-ori	- ,mtx_acq, 0;
 li	vpr_setup, -, 0x701a00;	# 7 horizontal rows.
 ;;;	# 3 instruction delay
 ori	a0, vpr, 0;	# xo
@@ -109,7 +101,6 @@ ori	a3, vpr, 0;	# wo
 ori	b0, vpr, 0;	# r
 ori	b1, vpr, 0;	# g
 ori	b2, vpr, 0;	# b
-ori	mtx_rel, 0, 0;
 
 #############################################################
 bl	a31, func_row_wise_mult;;;;
@@ -189,7 +180,6 @@ or	a0, a0, r0;
 # b1 g
 # b2 g
 
-ori	- ,mtx_acq, 0;
 li	vpw_setup, -, 0x1a00;
 or	vpw, a0, a0;
 or	vpw, a2, a2;
@@ -197,14 +187,12 @@ or	vpw, a3, a3;
 or	vpw, b0, b0;
 or	vpw, b1, b1;
 or	vpw, b2, b2;
-ori	mtx_rel, 0, 0;
 
 # Write VPM into RAM, for verification.
 #li	vdw_setup, -, 0x80104000;
 #ori	vdw_addr, uni_rd, 0;
 #or	-, vdw_wait, r0;
 
-#usb;
 ori	host_int, 1, 1;
 pe;;;
 
