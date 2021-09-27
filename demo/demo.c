@@ -3,44 +3,33 @@
 
 #include <dev/con.h>
 
+#define NUM_DEMOS			7
+
 int demo_run()
 {
-	int err;
+	typedef int (*fn_demo_run)();
+	int err, i;
 	int	d1_run();
 	int	d2_run();
 	int	d3_run();
 	int	d4_run();
 	int	d50_run();
 	int	d51_run();
+	int	d52_run();
 
-	err = d1_run();
-	con_out("d1: err %x", err);
-	if (err)
-		return err;
+	static const fn_demo_run fns[] = {
+		d1_run, d2_run, d3_run, d4_run, d50_run, d51_run, d52_run,
+	};
 
-	err = d2_run();
-	con_out("d2: err %x", err);
-	if (err)
-		return err;
+	static const char *fn_names[] = {
+		"d1", "d2", "d3", "d4", "d50", "d51", "d52",
+	};
 
-	err = d3_run();
-	con_out("d3: err %x", err);
-	if (err)
-		return err;
-
-	err = d4_run();
-	con_out("d4: err %x", err);
-	if (err)
-		return err;
-
-	err = d50_run();
-	con_out("d50: err %x", err);
-	if (err)
-		return err;
-
-	err = d51_run();
-	con_out("d51: err %x", err);
-	if (err)
-		return err;
+	for (i = 6; i < NUM_DEMOS; ++i) {
+		err = fns[i]();
+		con_out("%s: err %x", fn_names[i], err);
+		if (err)
+			break;
+	}
 	return err;
 }
