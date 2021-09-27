@@ -336,9 +336,6 @@ int d52_run()
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
 
-	//sem = (struct v3dcr_sema *)&v3dcr[off];
-	//off += sizeof(*sem);
-
 	cc = (struct v3dcr_clear_colours *)&v3dcr[off];
 	off += sizeof(*cc);
 
@@ -350,8 +347,6 @@ int d52_run()
 
 	stg = (struct v3dcr_store_tb_gen *)&v3dcr[off];
 	off += sizeof(*stg);
-
-	//sem->id = 8;
 
 	cc->id = 114;
 	// even and odd??
