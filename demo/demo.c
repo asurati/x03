@@ -25,7 +25,7 @@ int demo_run()
 		"d1", "d2", "d3", "d4", "d50", "d51", "d52",
 	};
 
-	for (i = 6; i < NUM_DEMOS; ++i) {
+	for (i = 0; i < NUM_DEMOS; ++i) {
 		err = fns[i]();
 		con_out("%s: err %x", fn_names[i], err);
 		if (err)
