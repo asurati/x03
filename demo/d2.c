@@ -31,6 +31,33 @@
 //
 // Total 64 words.
 
+// Although VDR in vertical mode allows us to load 4 vectors in a single
+// column (X=15 here), the behaviour of VDW in vertical mode is different.
+// When asked to write 4 vectors starting at Y=0,X=15, it seems to have
+// written Y=0,X=15, Y=0,X=0, Y=0,X=1 and Y=0,X=2. That is, it took 4 vectors
+// from different columns.
+//
+// VDR has VPITCH which adds to the Y address, but VDW (in vertical mode)
+// adds to the X address.
+//
+// https://github.com/maazl/vc4asm/issues/27
+// So if you choose vertical mode the elements in a memory row are vertically
+// aligned in VPM. The next row in memory will be in the next column of VPM.
+
+// The sample program that demonstrates the above analysis:
+#if 0
+li	vdr_setup, -, 0x8304080f;
+ori	vdr_addr, uni_rd, 0;
+or	-, vdr_wait, r0;
+
+li	vdw_setup, -, 0x82100078;
+ori	vdw_addr, uni_rd, 0;
+or	-, vdw_wait, r0;
+
+ori	host_int, 1, 1;
+pe;;;
+#endif
+
 static
 uint32_t d2_get_vdw_setup(int y, int x)
 {
@@ -129,6 +156,7 @@ int d2_run()
 		con_out("d2: [%d]: %x, %x", i, in_buf[i], out_buf[i]);
 	return err;
 }
+
 #if 0
 ori	r0, uni_rd, 0;
 ori	r1, uni_rd, 0;
