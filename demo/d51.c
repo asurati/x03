@@ -19,55 +19,30 @@
 #define HEIGHT				(NUM_TILES_Y * 64)
 
 // The Shaded Coordinates Format is the format in which a coordinate shader
-// outputs. Since we want an empty coordinate shader, we set the input of
-// the shader to be the same format as well. Similar siuation with vertex
+// outputs. Since we want a pass through coordinate shader, we set the input of
+// the shader to be the same format as well. Similar siuation with the vertex
 // shader.
 
-struct vs_vertex {
-	int16_t				xs;
-	int16_t				ys;
-	float				zs;
-	float				wcr;
-} __attribute__((packed));
-
-struct cs_vertex {
-	float				xc;
+struct vertex {
+	float				xc;	// CS vertex starts here.
 	float				yc;
 	float				zc;
 	float				wc;
-
-	int16_t				xs;
+	int16_t				xs;	// VS vertex starts here.
 	int16_t				ys;
 	float				zs;
-	float				wcr;
+	float				wcr;	// CS vertex ends here.
+	float				r;
+	float				g;
+	float				b;	// VS vertex ends here.
 } __attribute__((packed));
 
-// In screen coordinates. x and y in 12.4 fixed point format.
-static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
-	{320 << 4, 292 << 4, 0.75, 0.5},
-	{265 << 4, 187 << 4, 0.75, 0.5},
-	{374 << 4, 187 << 4, 0.75, 0.5},
+// The values are lifted up from d50.c.
+static const struct vertex verts[] = {
+	{0,	5/6.,	7/2.,	4,	0,	-798,	0.94,0.25,1,0,0},
+	{-5/8.,	-5/6.,	7/2.,	4,	-798,	798,	0.94,0.25,0,1,0},
+	{5/8.,	-5/6.,	7/2.,	4,	798,	798,	0.94,0.25,0,0,1},
 };
-
-static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
-	{0, 0.44,	1, 2, 320 << 4, 292 << 4, 0.75, 0.5},
-	{-0.34, -0.44,	1, 2, 265 << 4, 187 << 4, 0.75, 0.5},
-	{0.34, -0.44,	1, 2, 374 << 4, 187 << 4, 0.75, 0.5},
-};
-#if 0
-static const struct vs_vertex vs_verts[] __attribute__((aligned(32))) = {
-	{320 << 4, (346 << 4) | 9, 1.0, 0.5},
-	{(211 << 4) | 3, (134 << 4) | 6, 1.0, 0.5},
-	{(428 << 4) | 11, (134 << 4) | 6, 1.0, 0.5},
-};
-
-// zs is allowed to be in the range [0,1]
-static const struct cs_vertex cs_verts[] __attribute__((aligned(32))) = {
-	{0.0, 0.44,	-1.0, 2.0,	320 << 4, (345 << 4) | 9, 1.0, 0.5},
-	{-0.34, -0.44,	-1.0, 2.0,	(211 << 4) | 3, (134 << 4) | 6, 1.0, 0.5},
-	{0.34, -0.44,	-1.0, 2.0,	(428 << 4) | 11, (134 << 4) | 6, 1.0, 0.5},
-};
-#endif
 
 #if 0
 static
@@ -147,31 +122,50 @@ int d51_run()
 	};
 
 	static const uint32_t vs_code[] __attribute__((aligned(8))) = {
-		0x00301a00, 0xe0020c67, // li   vpr_setup, -, 0x301a00;
+		0x00601a00, 0xe0020c67, // li	vpr_setup, -, 0x301a00;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
-		0x15c00dc0, 0xd0020027, // ori  a0, vpr, 0;
-		0x15c00dc0, 0xd0020067, // ori  a1, vpr, 0;
-		0x15c00dc0, 0xd00200a7, // ori  a2, vpr, 0;
+		0x15c00dc0, 0xd0020027, // ori	a0, vpr, 0;
+		0x15c00dc0, 0xd0020067, // ori	a1, vpr, 0;
+		0x15c00dc0, 0xd00200a7, // ori	a2, vpr, 0;
+		0x15c00dc0, 0xd00200e7, // ori	a3, vpr, 0;
+		0x15c00dc0, 0xd0020127, // ori	a4, vpr, 0;
+		0x15c00dc0, 0xd0020167, // ori	a5, vpr, 0;
 
-		0x00001a00, 0xe0021c67, // li   vpw_setup, -, 0x1a00;
-		0x15027d80, 0x10020c27, // or   vpw, a0, a0;
-		0x15067d80, 0x10020c27, // or   vpw, a1, a1;
-		0x150a7d80, 0x10020c27, // or   vpw, a2, a2;
+		0x00001a00, 0xe0021c67, // li	vpw_setup, -, 0x1a00;
+		0x15027d80, 0x10020c27, // or	vpw, a0, a0;
+		0x15067d80, 0x10020c27, // or	vpw, a1, a1;
+		0x150a7d80, 0x10020c27, // or	vpw, a2, a2;
+		0x150e7d80, 0x10020c27, // or	vpw, a3, a3;
+		0x15127d80, 0x10020c27, // or	vpw, a4, a4;
+		0x15167d80, 0x10020c27, // or	vpw, a5, a5;
 
-		0x159c1fc0, 0xd00209a7, // ori  host_int, 1, 1;
+		0x159c1fc0, 0xd00209a7, // ori	host_int, 1, 1;
 		0x009e7000, 0x300009e7, // pe;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
 	};
 
 	static const uint32_t fs_code[] __attribute__((aligned(8))) = {
-		0x009e7000, 0x100009e7, // ;
-		0x009e7000, 0x100009e7, // ;
-		0xffff0000, 0xe0020ba7, // li   tlb_clr_all, -, 0xffff0000;
-		0x009e7000, 0x500009e7, // usb;
-		0x159c1fc0, 0xd00209a7, // ori  host_int, 1, 1;
+		0x203e303e, 0x100049e0, // fmul	r0, vary_rd, a15;
+		0x019e7140, 0x10020827, // fadd	r0, r0, r5;
+
+		0x203e303e, 0x100049e1, // fmul	r1, vary_rd, a15;
+		0x019e7340, 0x10020867, // fadd	r1, r1, r5;
+
+		0x203e303e, 0x100049e2, // fmul	r2, vary_rd, a15;
+		0x019e7540, 0x100208a7, // fadd	r2, r2, r5;
+
+		0xff000000, 0xe00208e7, // li	r3, -, 0xff000000;
+
+		0x209e0007, 0xd16049e3, // fmuli	r3, r0, 1f	pm8c;
+		0x209e000f, 0xd15049e3, // fmuli	r3, r1, 1f	pm8b;
+		0x209e0017, 0xd14049e3, // fmuli	r3, r2, 1f	pm8a;
+
+		0x159e76c0, 0x50020ba7, // or	tlb_clr_all, r3, r3	usb;
+
+		0x159c1fc0, 0xd00209a7, // ori	host_int, 1, 1;
 		0x009e7000, 0x300009e7, // pe;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
@@ -232,6 +226,8 @@ int d51_run()
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
 	vo->id = 103;
+	vo->x = 320 << 4;
+	vo->y = 240 << 4;
 
 	cxy->id = 105;
 	cxy->half_width = (WIDTH / 2) * 16.0;
@@ -249,19 +245,22 @@ int d51_run()
 
 	memset(&ssr, 0, sizeof(ssr));
 	ssr.flags = 5;
+	ssr.fs_num_vary = 3;
 	ssr.fs_code_addr = va_to_ba((va_t)fs_code);
+
 	ssr.cs_attr_sel = 1;
-	ssr.cs_attr_size = sizeof(struct cs_vertex);
+	ssr.cs_attr_size = 28;
 	ssr.cs_code_addr = va_to_ba((va_t)cs_code);
+	ssr.attr[0].base = va_to_ba((va_t)verts);
+	ssr.attr[0].num_bytes = 28 - 1;
+	ssr.attr[0].stride = 40;
+
 	ssr.vs_attr_sel = 2;
-	ssr.vs_attr_size = sizeof(struct vs_vertex);
+	ssr.vs_attr_size = 24;
 	ssr.vs_code_addr = va_to_ba((va_t)vs_code);
-	ssr.attr[0].base = va_to_ba((va_t)cs_verts);
-	ssr.attr[0].num_bytes = sizeof(struct cs_vertex) - 1;
-	ssr.attr[0].stride = sizeof(struct cs_vertex);
-	ssr.attr[1].base = va_to_ba((va_t)vs_verts);
-	ssr.attr[1].num_bytes = sizeof(struct vs_vertex) - 1;
-	ssr.attr[1].stride = sizeof(struct vs_vertex);
+	ssr.attr[1].base = va_to_ba((va_t)&verts[0].xs);
+	ssr.attr[1].num_bytes = 24 - 1;
+	ssr.attr[1].stride = 40;
 
 	dc_cvac(v3dcr, off);
 	dc_cvac(&ssr, sizeof(ssr));
@@ -388,16 +387,22 @@ pe;;;
 
 // Vertex Shader.
 #if 0
-li	vpr_setup, -, 0x301a00;
+li	vpr_setup, -, 0x601a00;
 ;;;
 ori	a0, vpr, 0;
 ori	a1, vpr, 0;
 ori	a2, vpr, 0;
+ori	a3, vpr, 0;
+ori	a4, vpr, 0;
+ori	a5, vpr, 0;
 
 li	vpw_setup, -, 0x1a00;
 or	vpw, a0, a0;
 or	vpw, a1, a1;
 or	vpw, a2, a2;
+or	vpw, a3, a3;
+or	vpw, a4, a4;
+or	vpw, a5, a5;
 
 ori	host_int, 1, 1;
 pe;;;
@@ -406,9 +411,28 @@ pe;;;
 // Fragment Shader. The framebuffer format is BGRA8888, or 0xaarrggbb, or
 // ARGB32.
 #if 0
-;;
-li	tlb_clr_all, -, 0xffff0000;	# Red triangle.
-usb;
+# RGB
+fmul	r0, vary_rd, a15;	# a15 has W.
+fadd	r0, r0, r5;
+
+fmul	r1, vary_rd, a15;
+fadd	r1, r1, r5;
+
+fmul	r2, vary_rd, a15;
+fadd	r2, r2, r5;
+
+li	r3, -, 0xff000000;	# alpha (= 8d)
+
+# Utilize MUL-pack facility to convert colour components from float to
+# byte with saturation, and place them at appropriate locations depending on
+# the framebuffer format. The format is 0x8d8c8b8a, corresponding to
+# 0xaarrggbb.
+fmuli	r3, r0, 1f	pm8c;
+fmuli	r3, r1, 1f	pm8b;
+fmuli	r3, r2, 1f	pm8a;
+
+or	tlb_clr_all, r3, r3	usb;
+
 ori	host_int, 1, 1;
 pe;;;
 #endif
