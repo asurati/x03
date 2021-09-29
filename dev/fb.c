@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2021 Amol Surati
 
+#include <lib/stdio.h>
+
 #include <sys/err.h>
 #include <sys/cpu.h>
 #include <sys/vmm.h>
 
+#include <dev/con.h>
 #include <dev/mbox.h>
 
 static pa_t g_fb_base;
@@ -19,6 +22,45 @@ pa_t fb_get_pa()
 volatile uint32_t *fb_get()
 {
 	return g_fb;
+}
+
+int fb_dump()
+{
+	int i, count[8], l;
+	uint32_t val[8], t;
+	static char buf[1024];
+	static const char *fmt =
+		"{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d},"
+		"{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d},";
+
+	// Run length encoding.
+
+	l = 0;
+	val[l] = g_fb[0];
+	count[l] = 1;
+	for (i = 1; i < 640 * 480; ++i) {
+		t = g_fb[i];
+		if (t == val[l]) {
+			++count[l];
+			continue;
+		}
+		++l;
+		if (l == 8) {
+			snprintf(buf, 1024, fmt,
+				val[0], count[0], val[1], count[1],
+				val[2], count[2], val[3], count[3],
+				val[4], count[4], val[5], count[5],
+				val[6], count[6], val[7], count[7]);
+			con_out(buf);
+			l = 0;
+		}
+		val[l] = t;
+		count[l] = 1;
+	}
+
+	for (i = 0; i <= l; ++i)
+		con_out("{0x%x,%d},", val[i], count[i]);
+	return ERR_SUCCESS;
 }
 
 static
