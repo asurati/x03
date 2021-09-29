@@ -10,7 +10,7 @@
 #include <dev/v3d.h>
 #include <dev/con.h>
 
-// Assuming a 640 x 480 framebuffer size.
+// Assuming a 640x480 framebuffer size.
 
 #define NUM_TILES_X			10
 #define NUM_TILES_Y			7
@@ -28,86 +28,92 @@ struct vertex {
 	float				b;
 } __attribute__((packed));
 
-// In screen coordinates. x and y in 12.4 fixed point format.
-// When these coordinates are given relative to the upper-left corner, treating
-// that corner as (0,0), the output is as expected. Same goes with Viewport
-// Offset Centre value, and the Clip Window left and bottom value.
-//
-// For e.g. When ClipWindow bottom is set to 40, a small bit, about 8 pixels
-// in height is clipped from the top of the triangle, since the top of the
-// triangle is at 32. Considering these values from the upper-left corner of
-// the monitor screen makes sense.
-//
-// The ViewPort Offset Centre (0,0) can be considered to be at the upper left
-// corner of the monitor screen. Changing it to say (30, 120) shifts the
-// rendered image on the screen to the right and down, which is as expected
-// when treating the coordinates as belonging to the upper-left origin system.
+// Object Coordinates (xyzw):
+// top		(0,	10,	-2,	1);
+// left		(-10,	-10,	-2,	1);
+// right	(10,	-10,	-2,	1);
 
-// The below window coordinates are for a triangle with object coordinates
-// top		(0, 3, -2, 1);
-// left		(-3, -1, -2, 1);
-// right	(3, -1, -2, 1);
-//
-// Camera at	(0,0,5);
-// The eye/view coordinates are thus:
-// top		(0, 3, -7, 1);
-// left		(-3, -1, -7, 1);
-// right	(3, -1, -7, 1);
-//
-// Frustum:
-// Near plane at -1, so n = 1.
-// Far plane at -10, so f = 10.
+// Camera:
+// Position	(0,	0,	2);
+// LookAt	(0,	0,	0);
 
-// 640x480 aspect ratio = 4:3
+// Eye/View Coordinates:
+// top		(0,	10,	-4,	1);
+// left		(-10,	-10,	-4,	1);
+// right	(10,	-10,	-4,	1);
 
-// The near plane's dimensions are:
-// Width = 8, Height = 6
-// Thus, r = 4, t = 3.
+// http://www.songho.ca/opengl/gl_projectionmatrix.html
+// Frustum (in Eye/View Coordinates):
+// Near Plane at z = -1. n = 1.
+// Far Plane at z = -5.	f = 5.
 
-// The perspective projection matrix is thus:
+// 640x480, Aspect Ratio = 4:3
+// Near Plane Dimensions: 32:24. r = 16, t = 12.
 
-//	1/4	0	0	0
-//	0	1/3	0	0
-//	0	0	-11/9	-20/9
+// The Perspective Projection Matrix:
+//	1/16	0	0	0
+//	0	1/12	0	0
+//	0	0	-3/2	-5/2
 //	0	0	-1	0
 
-// Clip coordinates:
-// top		(0,	1,	57/9,	7)	wc = 7
-// left		(-3/4,	-1/3,	57/9,	7)	wc = 7
-// right	(3/4,	-1/3,	57/9,	7)	wc = 7
+// Clip Coordinates:
+// top		(0,	5/6,	7/2,	4);
+// left		(-5/8,	-5/6,	7/2,	4);
+// right	(5/8,	-5/6,	7/2,	4);
 
-// NDC coordinates:
-// top		(0,	1/7,	57/63)
-// left		(-3/28,	-1/21,	57/63)
-// right	(3/28,	-1/21,	57/63)
+// NDC:
+// top		(0,	5/24,	7/8);
+// left		(-5/32,	-5/24,	7/8);
+// right	(5/32,	-5/24,	7/8);
 
-// Viewport (0, 0, 640, 480);
-// n = 0.0, f = 1.0 (glDepthRange)
+// ViewPort Centre Coordinates in Screen Space: (320, 240). The ViewPort
+// Origin is at Bottom Left of the Screen.
 
-// Flip the sign of the y coordinates, so that the image is right side up on
-// render.
+// NDC to ViewPort Transformation X direction:
+// NDC -1 is ViewPort -319.5 (Relative to the ViewPort Centre).
+// NDC 1 is ViewPort 319.5 (Relative to the ViewPort Centre).
+// (-1, -319.5) and (1, 319.5) are two points on a line.
+// m = y2-y1 / x2-x1 = 319.5+319.5 / 2 = 319.5
+// Xs = 319.5 * Xndc + d.
+// 319.5 = 319.5 * 1 + d => d = 0.
+// Xs = 319.5 * Xndc;
 
-// top		(0,	-1/7,	57/63)
-// left		(-3/28,	1/21,	57/63)
-// right	(3/28,	1/21,	57/63)
+// NDC to ViewPort Transformation Y direction:
+// Similar calculations as above:
+// Ys = 239.5 * Yndc;
 
-// Window coordinates:
-// top		(320,		1440/7,	60/63);
-// left		(2000/7,	1760/7,	60/63);
-// right	(2480/7,	1760/7,	60/63);
+// NDC to ViewPort Transformation Z direction:
+// glDepthRange(0, 1);
+// NDC -1 is ViewPort 0.
+// NDC 1 is ViewPort 1.
+// Simlar calculations as above:
+// Zs = 0.5 * (Zndc + 1);
 
-// Xs, Ys in 12.4 fixed point format:
-// top		(320<<4,	(205<<4)|11,	60/63);
-// left		((285<<4)|11,	(251<<4)|6,	60/63);
-// right	((354<<4)|4,	(251<<4)|6,	60/63);
+// NDC: Flip the sign of the Y coordinates, so that the resulting image is
+// right side up on render. This is because the GPU and the Framebuffer do not
+// agree on the coordinate axes - for the GPU, the origin is at the
+// bottom-left, but for the Framebuffer, it is at top-left.
 
-static const struct vertex verts[] __attribute__((aligned(32))) = {
-	// top
-	{320<<4,	(205<<4)|11,	60.0/63, 1.0/7,	1.0, 0.0, 0.0},
-	// left
-	{(285<<4)|11,	(251<<4)|6,	60.0/63, 1.0/7,	0.0, 1.0, 0.0},
-	// right
-	{(354<<4)|4,	(251<<4)|6,	60.0/63, 1.0/7,	0.0, 0.0, 1.0},
+// NDC Y-flipped:
+// top		(0,	-5/24,	7/8);
+// left		(-5/32,	5/24,	7/8);
+// right	(5/32,	5/24,	7/8);
+
+// Screen coordinates in float (Relative to the ViewPort Centre):
+// top		(0,	-49.9,	0.94);
+// left		(-49.9,	49.9,	0.94);
+// right	(49.9,	49.9,	0.94);
+
+// Screen coordinates (Xs, Ys) in 12.4 fixed point (float x 16.0)
+// (Relative to the ViewPort Centre):
+// top		(0,	-798,	0.94);
+// left		(-798,	798,	0.94);
+// right	(798,	798,	0.94);
+
+static const struct vertex verts[] = {
+	{0,	-798,	0.94,	0.25,	1, 0, 0},
+	{-798,	798,	0.94,	0.25,	0, 1, 0},
+	{798,	798,	0.94,	0.25,	0, 0, 1},
 };
 
 int d50_run()
@@ -125,7 +131,7 @@ int d50_run()
 	struct v3dcr_shader_state		*ss;
 	struct v3dcr_vert_array			*va;
 	struct v3dcr_flush			*f;
-	struct v3dcr_nv_shader_state_rec	*ssr;
+	struct v3dcr_sema			*sem;
 
 	struct v3dcr_clear_colours		*cc;
 	struct v3dcr_tile_rendering_mode	*trmc;
@@ -147,7 +153,8 @@ int d50_run()
 	static uint32_t ta[PAGE_SIZE >> 2] __attribute__((aligned(256)));
 
 	// Alignment enforced by NVSS/65.
-	static char ssr_buf[32] __attribute__((aligned(CACHE_LINE_SIZE)));
+	static struct v3dcr_nv_shader_state_rec ssr
+	       	__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t code[] __attribute__((aligned(8))) = {
 		0x203e303e, 0x100049e0, // fmul r0, vary_rd, a15;
@@ -174,8 +181,6 @@ int d50_run()
 		0x009e7000, 0x100009e7, // ;
 	};
 
-	memset(ssr_buf, 0, sizeof(ssr_buf));
-
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
 
@@ -184,6 +189,9 @@ int d50_run()
 
 	tbs = (struct v3dcr_tile_binning_start *)&v3dcr[off];
 	off += sizeof(*tbs);
+
+	sem = (struct v3dcr_sema *)&v3dcr[off];
+	off += sizeof(*sem);
 
 	cw = (struct v3dcr_clip_window *)&v3dcr[off];
 	off += sizeof(*cw);
@@ -216,6 +224,8 @@ int d50_run()
 
 	tbs->id = 6;
 
+	sem->id = 7;
+
 	cw->id = 102;
 	cw->width = WIDTH;
 	cw->height = HEIGHT;
@@ -226,13 +236,15 @@ int d50_run()
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
 	vo->id = 103;
+	vo->x = 320 << 4;
+	vo->y = 240 << 4;
 
 	cxy->id = 105;
 	cxy->half_width = (WIDTH / 2) * 16.0;
 	cxy->half_height = (HEIGHT / 2) * 16.0;
 
 	ss->id = 65;
-	ss->ssr_base = va_to_ba((va_t)ssr_buf);
+	ss->ssr_base = va_to_ba((va_t)&ssr);
 
 	va->id = 33;
 	va->mode = 4;
@@ -240,15 +252,15 @@ int d50_run()
 
 	f->id = 4;
 
-	ssr = (struct v3dcr_nv_shader_state_rec *)ssr_buf;
-	ssr->flags = 1;
-	ssr->stride = sizeof(struct vertex);
-	ssr->num_vary = 3;
-	ssr->code_addr = va_to_ba((va_t)code);
-	ssr->verts_addr = va_to_ba((va_t)verts);
+	memset(&ssr, 0, sizeof(ssr));
+	ssr.flags = 1;
+	ssr.stride = sizeof(struct vertex);
+	ssr.num_vary = 3;
+	ssr.code_addr = va_to_ba((va_t)code);
+	ssr.verts_addr = va_to_ba((va_t)verts);
 
 	dc_cvac(v3dcr, off);
-	dc_cvac(ssr, sizeof(*ssr));
+	dc_cvac(&ssr, sizeof(ssr));
 	dsb();
 
 	v3d_run_binner(va_to_ba((va_t)v3dcr), off);
@@ -306,6 +318,11 @@ int d50_run()
 			tc = (struct v3dcr_tile_coords *)&v3dcr[off];
 			off += sizeof(*tc);
 
+			if (x == 0 && y == 0) {
+				sem = (struct v3dcr_sema *)&v3dcr[off];
+				off += sizeof(*sem);
+			}
+
 			br = (struct v3dcr_branch *)&v3dcr[off];
 			off += sizeof(*br);
 
@@ -315,6 +332,9 @@ int d50_run()
 			tc->id = 115;
 			tc->col = x;
 			tc->row = y;
+
+			if (x == 0 && y == 0)
+				sem->id = 8;
 
 			tva = (va_t)ta;
 			tva += (y * NUM_TILES_X + x) * 32;
@@ -334,6 +354,7 @@ int d50_run()
 
 	v3d_run_renderer(va_to_ba((va_t)v3dcr), off);
 
+	return -1;
 	return ERR_SUCCESS;
 }
 
