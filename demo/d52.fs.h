@@ -4,32 +4,22 @@
 #include <stdint.h>
 
 static const uint32_t fs_code[] __attribute__((aligned(8))) = {
-	0x203e303e, 0x100049e0,
-	0x019e7140, 0x10020827,
-	0x203e303e, 0x100049e1,
-	0x019e7340, 0x10020867,
-	0x203e303e, 0x100049e2,
-	0x019e7540, 0x100208a7,
-	0x000000ff, 0xe00208e7,
-	0x089e76c0, 0x100208e7,
-	0x209e7003, 0x100049e0,
-	0x209e700b, 0x100049e1,
-	0x209e7013, 0x100049e2,
-	0x079e7000, 0x10020827,
-	0x079e7240, 0x10020867,
-	0x079e7480, 0x100208a7,
-	0x119c81c0, 0xd0020827,
-	0x119c81c0, 0xd0020827,
-	0x119c83c0, 0xd0020867,
-	0x159e7040, 0x10020827,
-	0x159e7080, 0x10020827,
-	0xff000000, 0xe0020867,
-	0x159e7040, 0x10020827,
-	0x159e7000, 0x50020ba7,
-	0x159c1fc0, 0xd00209a7,
-	0x009e7000, 0x300009e7,
-	0x009e7000, 0x100009e7,
-	0x009e7000, 0x100009e7,
+	0x203e303e, 0x100049e0, // fmul	r0, vary_rd, a15;
+	0x019e7140, 0x10020827, // fadd	r0, r0, r5;
+	0x203e303e, 0x100049e1, // fmul	r1, vary_rd, a15;
+	0x019e7340, 0x10020867, // fadd	r1, r1, r5;
+	0x203e303e, 0x100049e2, // fmul	r2, vary_rd, a15;
+	0x019e7540, 0x100208a7, // fadd	r2, r2, r5;
+	0x000000ff, 0xe00208e7, // li	r3, -, 0xff;
+	0x209e0007, 0xd16049e0, // fmuli	r0, r0, 1f	pm8c;
+	0x209e000f, 0xd15049e0, // fmuli	r0, r1, 1f	pm8b;
+	0x209e0017, 0xd14049e0, // fmuli	r0, r2, 1f	pm8a;
+	0x209e001f, 0xd17049e0, // fmuli	r0, r3, 1f	pm8d;
+	0x159e7000, 0x50020ba7, // or	tlb_clr_all, r0, r0	usb;
+	0x159c1fc0, 0xd00209a7, // ori	host_int, 1, 1;
+	0x009e7000, 0x300009e7, // pe;
+	0x009e7000, 0x100009e7, // ;
+	0x009e7000, 0x100009e7, // ;
 };
 // The framebuffer format is BGRA8888, or 0xaarrggbb, or ARGB32.
 
@@ -44,30 +34,16 @@ fadd	r1, r1, r5;
 fmul	r2, vary_rd, a15;
 fadd	r2, r2, r5;
 
-# TODO utilize mul output pack facility to convert floating point output into
-# a 8-bit colour in the range [0, 255].
-# x 255.0
-li	r3, -, 255;
-itof	r3, r3, r3;
-fmul	r0, r0, r3;
-fmul	r1, r1, r3;
-fmul	r2, r2, r3;
+li	r3, -, 0xff;	# alpha
 
-# To integer colour
-ftoi	r0, r0, r0;
-ftoi	r1, r1, r1;
-ftoi	r2, r2, r2;
-
-# 0xaarrggbb
-shli	r0, r0, 8;	# Red shifted by 16
-shli	r0, r0, 8;
-shli	r1, r1, 8;	# Green shifted by 8
-
-or	r0, r0, r1;
-or	r0, r0, r2;
-
-li	r1, -, 0xff000000;
-or	r0, r0, r1;
+# Utilize MUL-pack facility to convert colour components from float to
+# byte with saturation, and place them at appropriate locations depending on
+# the framebuffer format. The format is 0x8d8c8b8a, corresponding to
+# 0xaarrggbb.
+fmuli	r0, r0, 1f	pm8c;
+fmuli	r0, r1, 1f	pm8b;
+fmuli	r0, r2, 1f	pm8a;
+fmuli	r0, r3, 1f	pm8d;
 
 or	tlb_clr_all, r0, r0	usb;
 
