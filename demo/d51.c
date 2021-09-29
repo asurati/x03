@@ -81,7 +81,7 @@ void print_tile(int y, int x, uint32_t *arr)
 
 int d51_run()
 {
-	int err, off, x, y;
+	int off, x, y;
 	va_t tva;
 	pa_t	fb_get_pa();
 
@@ -119,91 +119,62 @@ int d51_run()
 		__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static const uint32_t cs_code[] __attribute__((aligned(8))) = {
-		0x00701a00, 0xe0020c67,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-		0x15c00dc0, 0xd0020027,
-		0x15c00dc0, 0xd0020067,
-		0x15c00dc0, 0xd00200a7,
-		0x15c00dc0, 0xd00200e7,
-		0x15c00dc0, 0xd0020127,
-		0x15c00dc0, 0xd0020167,
-		0x15c00dc0, 0xd00201a7,
-		0x00001a00, 0xe0021c67,
-		0x15027d80, 0x10020c27,
-		0x15067d80, 0x10020c27,
-		0x150a7d80, 0x10020c27,
-		0x150e7d80, 0x10020c27,
-		0x15127d80, 0x10020c27,
-		0x15167d80, 0x10020c27,
-		0x151a7d80, 0x10020c27,
-		0x159c1fc0, 0xd00209a7,
-		0x009e7000, 0x300009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
+		0x00701a00, 0xe0020c67, // li   vpr_setup, -, 0x701a00;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
+		0x15c00dc0, 0xd0020027, // ori  a0, vpr, 0;
+		0x15c00dc0, 0xd0020067, // ori  a1, vpr, 0;
+		0x15c00dc0, 0xd00200a7, // ori  a2, vpr, 0;
+		0x15c00dc0, 0xd00200e7, // ori  a3, vpr, 0;
+		0x15c00dc0, 0xd0020127, // ori  a4, vpr, 0;
+		0x15c00dc0, 0xd0020167, // ori  a5, vpr, 0;
+		0x15c00dc0, 0xd00201a7, // ori  a6, vpr, 0;
+
+		0x00001a00, 0xe0021c67, // li   vpw_setup, -, 0x1a00;
+		0x15027d80, 0x10020c27, // or   vpw, a0, a0;
+		0x15067d80, 0x10020c27, // or   vpw, a1, a1;
+		0x150a7d80, 0x10020c27, // or   vpw, a2, a2;
+		0x150e7d80, 0x10020c27, // or   vpw, a3, a3;
+		0x15127d80, 0x10020c27, // or   vpw, a4, a4;
+		0x15167d80, 0x10020c27, // or   vpw, a5, a5;
+		0x151a7d80, 0x10020c27, // or   vpw, a6, a6;
+
+		0x159c1fc0, 0xd00209a7, // ori  host_int, 1, 1;
+		0x009e7000, 0x300009e7, // pe;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
 	};
 
 	static const uint32_t vs_code[] __attribute__((aligned(8))) = {
-		0x00301a00, 0xe0020c67,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-		0x15c00dc0, 0xd0020027,
-		0x15c00dc0, 0xd0020067,
-		0x15c00dc0, 0xd00200a7,
-		0x00001a00, 0xe0021c67,
-		0x15027d80, 0x10020c27,
-		0x15067d80, 0x10020c27,
-		0x150a7d80, 0x10020c27,
-		0x159c1fc0, 0xd00209a7,
-		0x009e7000, 0x300009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
+		0x00301a00, 0xe0020c67, // li   vpr_setup, -, 0x301a00;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
+		0x15c00dc0, 0xd0020027, // ori  a0, vpr, 0;
+		0x15c00dc0, 0xd0020067, // ori  a1, vpr, 0;
+		0x15c00dc0, 0xd00200a7, // ori  a2, vpr, 0;
+
+		0x00001a00, 0xe0021c67, // li   vpw_setup, -, 0x1a00;
+		0x15027d80, 0x10020c27, // or   vpw, a0, a0;
+		0x15067d80, 0x10020c27, // or   vpw, a1, a1;
+		0x150a7d80, 0x10020c27, // or   vpw, a2, a2;
+
+		0x159c1fc0, 0xd00209a7, // ori  host_int, 1, 1;
+		0x009e7000, 0x300009e7, // pe;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
 	};
 
 	static const uint32_t fs_code[] __attribute__((aligned(8))) = {
-		0x009e7000, 0x400009e7,
-		0xffff0000, 0xe0020ba7,
-		0x009e7000, 0x500009e7,
-		0x159c1fc0, 0xd00209a7,
-		0x009e7000, 0x300009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-#if 0
-		0x018c0dc0, 0xd0020827,
-		0x019e7140, 0x10020827,
-		0x018c0dc0, 0xd0020867,
-		0x019e7340, 0x10020867,
-		0x018c0dc0, 0xd00208a7,
-		0x019e7540, 0x100208a7,
-
-		0x000000ff, 0xe00248e7,
-		0x089e76c0, 0x100208e7,
-		0x209e7003, 0x100049e0,
-		0x209e700b, 0x100049e1,
-		0x209e7013, 0x100049e2,
-
-		0x079e7000, 0x10020827,
-		0x079e7240, 0x10020867,
-		0x079e7480, 0x100208a7,
-
-		0x119c81c0, 0xd0020827,
-		0x119c81c0, 0xd0020827,
-		0x119c83c0, 0xd0020867,
-
-		0x159e7040, 0x10020827,
-		0x159e7080, 0x10020827,
-
-		0xff000000, 0xe0024867,
-		0x159e7040, 0x10020827,
-		0x159e7000, 0x50020ba7,
-
-		0x159c1fc0, 0xd00209a7,
-		0x009e7000, 0x300009e7,
-		0x009e7000, 0x100009e7,
-		0x009e7000, 0x100009e7,
-#endif
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
+		0xffff0000, 0xe0020ba7, // li   tlb_clr_all, -, 0xffff0000;
+		0x009e7000, 0x500009e7, // usb;
+		0x159c1fc0, 0xd00209a7, // ori  host_int, 1, 1;
+		0x009e7000, 0x300009e7, // pe;
+		0x009e7000, 0x100009e7, // ;
+		0x009e7000, 0x100009e7, // ;
 	};
 
 	off = 0;
@@ -298,29 +269,8 @@ int d51_run()
 
 	v3d_run_binner(va_to_ba((va_t)v3dcr), off);
 
-#if 0
-	dc_ivac(tsda, sizeof(tsda));
-	dc_ivac(ta, sizeof(ta));
-	dsb();
-
-	for (i = 0; i < (int)(sizeof(tsda) >> 2); ++i) {
-		val = *(volatile uint32_t *)&tsda[i];
-		if (val)
-			con_out("tsda[%x] = %x", i, val);
-	}
-
-	for (i = 0; i < (int)(sizeof(ta) >> 2); ++i) {
-		val = *(volatile uint32_t *)&ta[i];
-		if (val)
-			con_out("ta[%x] = %x", i, val);
-	}
-#endif
-
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
-
-	sem = (struct v3dcr_sema *)&v3dcr[off];
-	off += sizeof(*sem);
 
 	cc = (struct v3dcr_clear_colours *)&v3dcr[off];
 	off += sizeof(*cc);
@@ -333,8 +283,6 @@ int d51_run()
 
 	stg = (struct v3dcr_store_tb_gen *)&v3dcr[off];
 	off += sizeof(*stg);
-
-	sem->id = 8;
 
 	cc->id = 114;
 	// even and odd??
@@ -359,6 +307,11 @@ int d51_run()
 			tc = (struct v3dcr_tile_coords *)&v3dcr[off];
 			off += sizeof(*tc);
 
+			if (x == 0 && y == 0) {
+				sem = (struct v3dcr_sema *)&v3dcr[off];
+				off += sizeof(*sem);
+			}
+
 			br = (struct v3dcr_branch *)&v3dcr[off];
 			off += sizeof(*br);
 
@@ -368,6 +321,9 @@ int d51_run()
 			tc->id = 115;
 			tc->col = x;
 			tc->row = y;
+
+			if (x == 0 && y == 0)
+				sem->id = 8;
 
 			tva = (va_t)ta;
 			tva += (y * NUM_TILES_X + x) * 32;
@@ -388,9 +344,22 @@ int d51_run()
 
 	v3d_run_renderer(va_to_ba((va_t)v3dcr), off);
 
-	err = ERR_SUCCESS;
-	return err;
+	return ERR_SUCCESS;
 }
+
+// The QPU automatically redirects the reads and writes from within the
+// CS and VS to the appropriate locations reserved for this QPU in the VPM.
+
+// Although it seems the shaders are reading and writing from Y=0, the actual
+// rows are likely to be different. Not only that, the shaders are also not
+// able to overwrite the rows containing the input vertices; the shaded
+// vertices get written in the rows following those containing the input
+// vertices.
+//
+// If the shaded vertices are not stored/written, the actual rows where the
+// PTB/PSE expects the shaded vertices to be present contain previous/garbage
+// data, which perhaps results in a render with just the clear colour and
+// nothing else.
 
 // Coordinate Shader.
 #if 0
@@ -434,54 +403,12 @@ ori	host_int, 1, 1;
 pe;;;
 #endif
 
-
+// Fragment Shader. The framebuffer format is BGRA8888, or 0xaarrggbb, or
+// ARGB32.
 #if 0
-# Wait for Scoreboard
-wsb;
-li	tlb_clr_all, -, 0xffff0000;
+;;
+li	tlb_clr_all, -, 0xffff0000;	# Red triangle.
 usb;
-ori	host_int, 1, 1;
-pe;;;
-#endif
-
-
-// The framebuffer format is BGRA8888, or 0xaarrggbb, or ARGB32.
-#if 0
-# RGB
-faddi	r0, vary_rd, 0;
-fadd	r0, r0, r5;
-
-faddi	r1, vary_rd, 0;
-fadd	r1, r1, r5;
-
-faddi	r2, vary_rd, 0;
-fadd	r2, r2, r5;
-
-# x 255.0
-li	r3, -, 255;
-itof	r3, r3, r3;
-fmul	r0, r0, r3;
-fmul	r1, r1, r3;
-fmul	r2, r2, r3;
-
-# To integer colour
-ftoi	r0, r0, r0;
-ftoi	r1, r1, r1;
-ftoi	r2, r2, r2;
-
-# 0xaarrggbb
-shli	r0, r0, 8;	# Red shifted by 16
-shli	r0, r0, 8;
-shli	r1, r1, 8;	# Green shifted by 8
-
-or	r0, r0, r1;
-or	r0, r0, r2;
-
-li	r1, -, 0xff000000;
-or	r0, r0, r1;
-
-or	tlb_clr_all, r0, r0	usb;
-
 ori	host_int, 1, 1;
 pe;;;
 #endif
