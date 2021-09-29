@@ -166,14 +166,13 @@ int d50_run()
 		0x203e303e, 0x100049e2, // fmul	r2, vary_rd, a15;
 		0x019e7540, 0x100208a7, // fadd	r2, r2, r5;
 
-		0x209e0007, 0xd16049e0, // fmuli	r0, r0, 1f	pm8c;
-		0x209e000f, 0xd15049e0, // fmuli	r0, r1, 1f	pm8b;
-		0x209e0017, 0xd14049e0, // fmuli	r0, r2, 1f	pm8a;
-
 		0xff000000, 0xe00208e7, // li	r3, -, 0xff000000;
-		0x159e70c0, 0x10020827, // or	r0, r0, r3;
 
-		0x159e7000, 0x50020ba7, // or	tlb_clr_all, r0, r0	usb;
+		0x209e0007, 0xd16049e3, // fmuli	r3, r0, 1f	pm8c;
+		0x209e000f, 0xd15049e3, // fmuli	r3, r1, 1f	pm8b;
+		0x209e0017, 0xd14049e3, // fmuli	r3, r2, 1f	pm8a;
+
+		0x159e76c0, 0x50020ba7, // or	tlb_clr_all, r3, r3	usb;
 
 		0x159c1fc0, 0xd00209a7, // ori	host_int, 1, 1;
 		0x009e7000, 0x300009e7, // pe;
@@ -370,18 +369,17 @@ fadd	r1, r1, r5;
 fmul	r2, vary_rd, a15;
 fadd	r2, r2, r5;
 
+li	r3, -, 0xff000000;	# alpha (= 8d)
+
 # Utilize MUL-pack facility to convert colour components from float to
 # byte with saturation, and place them at appropriate locations depending on
 # the framebuffer format. The format is 0x8d8c8b8a, corresponding to
 # 0xaarrggbb.
-fmuli	r0, r0, 1f	pm8c;
-fmuli	r0, r1, 1f	pm8b;
-fmuli	r0, r2, 1f	pm8a;
+fmuli	r3, r0, 1f	pm8c;
+fmuli	r3, r1, 1f	pm8b;
+fmuli	r3, r2, 1f	pm8a;
 
-li	r3, -, 0xff000000;	# alpha
-or	r0, r0, r3;
-
-or	tlb_clr_all, r0, r0	usb;
+or	tlb_clr_all, r3, r3	usb;
 
 ori	host_int, 1, 1;
 pe;;;
