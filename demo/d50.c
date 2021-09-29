@@ -334,7 +334,6 @@ int d50_run()
 
 	v3d_run_renderer(va_to_ba((va_t)v3dcr), off);
 
-	return -1;
 	return ERR_SUCCESS;
 }
 
