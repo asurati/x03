@@ -264,11 +264,11 @@ int d50_run()
 
 	v3d_run_binner(va_to_ba((va_t)v3dcr), off);
 
+#if 0
 	dc_ivac(tsda, sizeof(tsda));
 	dc_ivac(ta, sizeof(ta));
 	dsb();
 
-#if 0
 	for (i = 0; i < (int)(sizeof(tsda) >> 2); ++i) {
 		val = *(volatile uint32_t *)&tsda[i];
 		if (val)
