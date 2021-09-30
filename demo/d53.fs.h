@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// Same as d52.cs.h, except for the write to TLB_Z.
+// Same as d52.fs.h, except for the write to TLB_Z.
 static const uint32_t fs_code[] __attribute__((aligned(8))) = {
 	0x203e303e, 0x100049e0, // fmul	r0, vary_rd, a15;
 	0x019e7140, 0x10020827, // fadd	r0, r0, r5;
