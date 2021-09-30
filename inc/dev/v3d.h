@@ -137,6 +137,11 @@
 #define VPW_HORIZ_BITS			VPR_HORIZ_BITS
 #define VPW_STRIDE_BITS			VPR_STRIDE_BITS
 
+#define V3DCR_TBMC_FLAGS_MSAA_POS	0
+#define V3DCR_TBMC_FLAGS_INIT_TSDA_POS	2
+#define V3DCR_TBMC_FLAGS_MSAA_BITS	1
+#define V3DCR_TBMC_FLAGS_INIT_TSDA_BITS	1
+
 struct v3dcr_tile_binning_mode {
 	uint8_t				id;		// 112
 	uint32_t			ta_base;
@@ -158,6 +163,16 @@ struct v3dcr_clip_window {
 	uint16_t			width;
 	uint16_t			height;
 } __attribute__((packed));
+
+#define V3DCR_CFG_FWD_FACE_EN_POS	0
+#define V3DCR_CFG_CLOCKWISE_POS		2
+#define V3DCR_CFG_FWD_FACE_EN_BITS	1
+#define V3DCR_CFG_CLOCKWISE_BITS	1
+
+#define V3DCR_CFG_Z_UPDATE_EN_POS	7
+#define V3DCR_CFG_Z_TEST_FN_POS		4
+#define V3DCR_CFG_Z_UPDATE_EN_BITS	1
+#define V3DCR_CFG_Z_TEST_FN_BITS	3
 
 struct v3dcr_config_bits {
 	uint8_t				id;		// 96
@@ -181,6 +196,8 @@ struct v3dcr_shader_state {
 	uint32_t			ssr_base;
 } __attribute__((packed));
 
+#define V3DCR_VERT_ARR_MODE_TRI		4
+
 struct v3dcr_vert_array {
 	uint8_t				id;		// 33
 	uint8_t				mode;
@@ -203,6 +220,11 @@ struct v3dcr_gl_attr {
 	uint8_t				vs_vpm_off;
 	uint8_t				cs_vpm_off;
 } __attribute__((packed));
+
+#define V3DCR_SSR_FLAGS_FS_STHRD_POS	0
+#define V3DCR_SSR_FLAGS_CLIP_EN_POS	2
+#define V3DCR_SSR_FLAGS_FS_STHRD_BITS	1
+#define V3DCR_SSR_FLAGS_CLIP_EN_BITS	1
 
 struct v3dcr_gl_shader_state_rec {
 	uint16_t			flags;
@@ -243,6 +265,11 @@ struct v3dcr_clear_colours {
 	uint32_t			mask;
 	uint8_t				stencil;
 } __attribute__((packed));
+
+#define V3DCR_TRMC_FLAGS_MSAA_POS	0
+#define V3DCR_TRMC_FLAGS_FBC_FMT_POS	2
+#define V3DCR_TRMC_FLAGS_MSAA_BITS	1
+#define V3DCR_TRMC_FLAGS_FBC_FMT_BITS	2
 
 struct v3dcr_tile_rendering_mode {
 	uint8_t				id;		// 113
