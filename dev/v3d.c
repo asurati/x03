@@ -18,11 +18,13 @@ static volatile uint32_t *g_v3d_regs;
 static
 void v3d_hw_irqh()
 {
-	uint32_t intctl, dbqitc;
+	uint32_t intctl, dbqitc, errstat;
 
 	intctl = g_v3d_regs[V3D_INTCTL];
 	dbqitc = g_v3d_regs[V3D_DBQITC];
-	con_out("v3dirqh: intctl %x, dbqitc %x", intctl, dbqitc);
+	errstat = g_v3d_regs[V3D_ERRSTAT];
+	con_out("v3dirqh: errstat %x, intctl %x, dbqitc %x",
+		errstat, intctl, dbqitc);
 
 	// Deassert the signals
 	if (intctl)
@@ -66,7 +68,6 @@ void v3d_run_renderer(ba_t cr, size_t size)
 		break;
 	}
 #if 0
-	con_out("errstat %x", g_v3d_regs[V3D_ERRSTAT]);
 	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
 	con_out("ct1cs %x", g_v3d_regs[V3D_CT1CS]);
 	con_out("ct1ca %x", g_v3d_regs[V3D_CT1CA]);
@@ -92,7 +93,6 @@ void v3d_run_binner(ba_t cr, size_t size)
 			continue;
 		break;
 	}
-	con_out("errstat %x", g_v3d_regs[V3D_ERRSTAT]);
 	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
 	con_out("ct0cs %x", g_v3d_regs[V3D_CT0CS]);
 	con_out("ct0ca %x", g_v3d_regs[V3D_CT0CA]);
