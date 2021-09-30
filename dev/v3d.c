@@ -93,6 +93,7 @@ void v3d_run_binner(ba_t cr, size_t size)
 			continue;
 		break;
 	}
+#if 0
 	con_out("dbge %x", g_v3d_regs[V3D_DBGE]);
 	con_out("ct0cs %x", g_v3d_regs[V3D_CT0CS]);
 	con_out("ct0ca %x", g_v3d_regs[V3D_CT0CA]);
@@ -104,6 +105,7 @@ void v3d_run_binner(ba_t cr, size_t size)
 	con_out("rfc %x", g_v3d_regs[V3D_RFC]);
 	con_out("bpca %x", g_v3d_regs[V3D_BPCA]);
 	con_out("bpcs %x", g_v3d_regs[V3D_BPCS]);
+#endif
 }
 
 // IPL_THREAD
