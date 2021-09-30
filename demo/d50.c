@@ -10,13 +10,18 @@
 #include <dev/v3d.h>
 #include <dev/con.h>
 
-// Assuming a 640x480 framebuffer size.
+#define FB_WIDTH			640
+#define FB_HEIGHT			480
 
-#define NUM_TILES_X			10
-#define NUM_TILES_Y			7
+#define TILE_WIDTH			64
+#define TILE_HEIGHT			64
 
-#define WIDTH				(NUM_TILES_X * 64)
-#define HEIGHT				(NUM_TILES_Y * 64)
+// Hope the GPU doesn't write beyond the FB, since the last row of the tiles
+// is less than 64 pixels in height. The ClipWindow and ViewPort configurations
+// should help in avoiding the buffer overflow.
+
+#define NUM_TILES_X			(FB_WIDTH / TILE_WIDTH)
+#define NUM_TILES_Y			(FB_HEIGHT / TILE_HEIGHT + 1)
 
 struct vertex {
 	int16_t				xs;
@@ -29,18 +34,18 @@ struct vertex {
 } __attribute__((packed));
 
 // Object Coordinates (xyzw):
-// top		(0,	10,	-2,	1);
-// left		(-10,	-10,	-2,	1);
-// right	(10,	-10,	-2,	1);
+// top		(0,	50,	-2,	1);
+// left		(-50,	-50,	-2,	1);
+// right	(50,	-50,	-2,	1);
 
 // Camera:
 // Position	(0,	0,	2);
 // LookAt	(0,	0,	0);
 
 // Eye/View Coordinates:
-// top		(0,	10,	-4,	1);
-// left		(-10,	-10,	-4,	1);
-// right	(10,	-10,	-4,	1);
+// top		(0,	50,	-4,	1);
+// left		(-50,	-50,	-4,	1);
+// right	(50,	-50,	-4,	1);
 
 // http://www.songho.ca/opengl/gl_projectionmatrix.html
 // Frustum (in Eye/View Coordinates):
@@ -48,23 +53,23 @@ struct vertex {
 // Far Plane at z = -5.	f = 5.
 
 // 640x480, Aspect Ratio = 4:3
-// Near Plane Dimensions: 32:24. r = 16, t = 12.
+// Near Plane Dimensions: 40:30. r = 20, t = 15.
 
 // The Perspective Projection Matrix:
-//	1/16	0	0	0
-//	0	1/12	0	0
+//	1/20	0	0	0
+//	0	1/15	0	0
 //	0	0	-3/2	-5/2
 //	0	0	-1	0
 
 // Clip Coordinates:
-// top		(0,	5/6,	7/2,	4);
-// left		(-5/8,	-5/6,	7/2,	4);
-// right	(5/8,	-5/6,	7/2,	4);
+// top		(0,	10/3,	7/2,	4);
+// left		(-5/2,	-10/3,	7/2,	4);
+// right	(5/2,	-10/3,	7/2,	4);
 
 // NDC:
-// top		(0,	5/24,	7/8);
-// left		(-5/32,	-5/24,	7/8);
-// right	(5/32,	-5/24,	7/8);
+// top		(0,	10/12,	7/8);
+// left		(-5/8,	-10/12,	7/8);
+// right	(5/8,	-10/12,	7/8);
 
 // ViewPort Centre Coordinates in Screen Space: (320, 240). The ViewPort
 // Origin is at Bottom Left of the Screen.
@@ -95,25 +100,25 @@ struct vertex {
 // bottom-left, but for the Framebuffer, it is at top-left.
 
 // NDC Y-flipped:
-// top		(0,	-5/24,	7/8);
-// left		(-5/32,	5/24,	7/8);
-// right	(5/32,	5/24,	7/8);
+// top		(0,	-10/12,	7/8);
+// left		(-5/8,	10/12,	7/8);
+// right	(5/8,	10/12,	7/8);
 
 // Screen coordinates in float (Relative to the ViewPort Centre):
-// top		(0,	-49.9,	0.94);
-// left		(-49.9,	49.9,	0.94);
-// right	(49.9,	49.9,	0.94);
+// top		(0,		-199.6,	0.94);
+// left		(-199.7,	199.6,	0.94);
+// right	(199.7,		199.6,	0.94);
 
 // Screen coordinates (Xs, Ys) in 12.4 fixed point (float x 16.0)
 // (Relative to the ViewPort Centre):
-// top		(0,	-798,	0.94);
-// left		(-798,	798,	0.94);
-// right	(798,	798,	0.94);
+// top		(0,	-3193,	0.94);
+// left		(-3195,	3193,	0.94);
+// right	(3195,	3193,	0.94);
 
 static const struct vertex verts[] = {
-	{0,	-798,	0.94,	0.25,	1, 0, 0},
-	{-798,	798,	0.94,	0.25,	0, 1, 0},
-	{798,	798,	0.94,	0.25,	0, 0, 1},
+	{0,	-3193,	0.94,	0.25,	1, 0, 0},
+	{-3195,	3193,	0.94,	0.25,	0, 1, 0},
+	{3195,	3193,	0.94,	0.25,	0, 0, 1},
 };
 
 int d50_run()
@@ -219,15 +224,16 @@ int d50_run()
 	tbmc->tsda_base = va_to_ba((va_t)tsda);
 	tbmc->width = NUM_TILES_X;
 	tbmc->height = NUM_TILES_Y;
-	tbmc->flags = 4;	// Auto-init tsda. Necessary.
+	tbmc->flags |= bits_on(V3DCR_TBMC_FLAGS_INIT_TSDA);	// Necessary.
 
 	tbs->id = 6;
 
 	sem->id = 7;
 
+	// ClipWindow excludes the last row of the tiles.
 	cw->id = 102;
-	cw->width = WIDTH;
-	cw->height = HEIGHT;
+	cw->width = FB_WIDTH;
+	cw->height = FB_HEIGHT;
 
 	// By default, the GPU considers any triangle seen with an
 	// anti-clockwise winding order (CCW) as front facing, but because the
@@ -240,29 +246,34 @@ int d50_run()
 	// front facing winding order, and then enable the front facing
 	// primitives.
 	cb->id = 96;
-	cb->flags[0] = 5;
+	cb->flags[0] |= bits_on(V3DCR_CFG_FWD_FACE_EN);
+	cb->flags[0] |= bits_on(V3DCR_CFG_CLOCKWISE);
 
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
 	vo->id = 103;
-	vo->x = 320 << 4;
-	vo->y = 240 << 4;
+	vo->x = (FB_WIDTH / 2) << 4;	// Centre coordinates.
+	vo->y = (FB_HEIGHT / 2) << 4;
 
+	// ViewPort is the entire FrameBuffer, although we do not render the
+	// final row of the tiles when MSAA is not enabled, since the height
+	// of that row is less than 64. To avoid going beyond the FB
+	// boundaries.
 	cxy->id = 105;
-	cxy->half_width = (WIDTH / 2) * 16.0;
-	cxy->half_height = (HEIGHT / 2) * 16.0;
+	cxy->half_width = (FB_WIDTH / 2) * 16.0;
+	cxy->half_height = (FB_HEIGHT / 2) * 16.0;
 
 	ss->id = 65;
 	ss->ssr_base = va_to_ba((va_t)&ssr);
 
 	va->id = 33;
-	va->mode = 4;
+	va->mode = V3DCR_VERT_ARR_MODE_TRI;
 	va->num_verts = 3;
 
 	f->id = 4;
 
 	memset(&ssr, 0, sizeof(ssr));
-	ssr.flags = 1;
+	ssr.flags |= bits_on(V3DCR_SSR_FLAGS_FS_STHRD);
 	ssr.stride = sizeof(struct vertex);
 	ssr.num_vary = 3;
 	ssr.code_addr = va_to_ba((va_t)code);
@@ -314,9 +325,9 @@ int d50_run()
 
 	trmc->id = 113;
 	trmc->tb_base = pa_to_ba(fb_get_pa());
-	trmc->width = WIDTH;
-	trmc->height = HEIGHT;
-	trmc->flags = 4;
+	trmc->width = FB_WIDTH;
+	trmc->height = FB_HEIGHT;
+	trmc->flags |= bits_set(V3DCR_TRMC_FLAGS_FBC_FMT, 1);	//RGBA8888
 
 	// Clear Colours needs an empty write.
 	tc->id = 115;
@@ -362,7 +373,6 @@ int d50_run()
 	dsb();
 
 	v3d_run_renderer(va_to_ba((va_t)v3dcr), off);
-
 	return ERR_SUCCESS;
 }
 

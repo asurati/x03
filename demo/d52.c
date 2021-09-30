@@ -15,158 +15,45 @@
 #include "d52.vs.h"
 #include "d52.fs.h"
 
-// Assuming a 640 x 480 framebuffer size.
+#define FB_WIDTH			640
+#define FB_HEIGHT			480
 
-#define NUM_TILES_X			10
-#define NUM_TILES_Y			7
+#define TILE_WIDTH			64
+#define TILE_HEIGHT			64
 
-#define WIDTH				(NUM_TILES_X * 64)
-#define HEIGHT				(NUM_TILES_Y * 64)
+// Hope the GPU doesn't write beyond the FB, since the last row of the tiles
+// is less than 64 pixels in height. The ClipWindow and ViewPort configurations
+// should help in avoiding the buffer overflow.
 
+#define NUM_TILES_X			(FB_WIDTH / TILE_WIDTH)
+#define NUM_TILES_Y			(FB_HEIGHT / TILE_HEIGHT + 1)
+
+// For some ease, provide the eye/view coordinates as input to the cs and vs,
+// instead of the object coordinates.
 struct vertex {
-	float				xo;
-	float				yo;
-	float				zo;
-	float				wo;
+	float				xe;
+	float				ye;
+	float				ze;
+	float				we;
 	float				r;
 	float				g;
 	float				b;
 } __attribute__((packed));
 
-// For some ease, provide the eye/view coordinates as input to the cs and vs.
-// The cs will read only the first 4 attributes. The GL shader state record
-// must list the cs attribute as follows:
-// Base = verts
-// Number of Bytes = 16;
-// Memory Stride = 28;	// Need to skip over the R,G,B fields.
-
+// The values are lifted up from d50.c.
 static const struct vertex verts[] = {
-	{0,	3,	-7, 1,	 1, 0, 0},
-	{-3,	-1,	-7, 1,	 0, 1, 0},
-	{3,	-1,	-7, 1,	 0, 0, 1},
+	{0,	50,	-4, 1,	 1, 0, 0},
+	{-50,	-50,	-4, 1,	 0, 1, 0},
+	{50,	-50,	-4, 1,	 0, 0, 1},
 };
-
-// The cs receives these values as:
-// 0	-3	3
-// 3	-1	-1
-// -7	-7	-7
-// 1	1	1
 
 // The perpsective projection matrix is passed as a uniform. Row-major order.
 static const float proj_mat[4][4] = {
-	{1.0/4,	0,	0,		0},
-	{0,	1.0/3,	0,		0},
-	{0,	0,	-11.0/9,	-20.0/9},
-	{0,	0,	-1,		0},
+	{1./20,	0,	0,	0},
+	{0,	1./15,	0,	0},
+	{0,	0,	-3./2,	-5./2},
+	{0,	0,	-1,	0},
 };
-
-// The v3d gpu takes ViewPort Centre (cx, cy) value, and the xs and ys are
-// relative to that centre.
-// For 640x480, the centre is at WC (320, 240).
-
-// The NDC to ViewPort/WC transformation is as follows:
-// The ViewPort origin is at bottom left.
-
-// In the X direction:
-// NDC -1 is WC -319.5 (relative to the ViewPort Centre X).
-// NDC 1 is WC 319.5 (relative to the ViewPort Centre X).
-// (-1, -319.5) and (1, 319.5) are two points on a line. The slope is
-// m = y2-y1 / x2-x1
-// 319.5+319.5 / 2 = 319.5
-// xs = 319.5 * xndc + d.
-// 319.5 = 319.5 * 1 + d => d = 0
-// xs = 319.5 * xndc;
-
-// In the Y direction:
-// NDC -1 is WC -239.5 (relative to the ViewPort Centre X).
-// NDC 1 is WC 239.5 (relative to the ViewPort Centre X).
-// (-1, -239.5) and (1, 239.5) are two points on a line. The slope is
-// m = y2-y1 / x2-x1
-// 239.5+239.5 / 2 = 239.5
-// ys = 239.5 * yndc + d.
-// 239.5 = 239.5 * 1 + d. => d = 0
-// ys = 239.5 * yndc.
-
-// In the Z direction (glDepthRange is (0,1)):
-// NDC -1 is WC 0.
-// NDC 1 is WC 1.
-// (-1, 0) and (1, 1) are two points on a line. The slope is
-// m = y2-y1 / x2-x1
-// 1-0 / 2 = 1/2
-// zs = 0.5 * zndc + d.
-// 1 = 0.5 + d => d = 0.5.
-// zs = 0.5 * zndc + 0.5.
-
-// Calculations:
-// top		(0, 3, -2, 1);
-// left		(-3, -1, -2, 1);
-// right	(3, -1, -2, 1);
-//
-// Camera at	(0,0,5);
-// The eye/view coordinates are thus:
-// top		(0, 3, -7, 1);
-// left		(-3, -1, -7, 1);
-// right	(3, -1, -7, 1);
-//
-// Frustum:
-// Near plane at -1, so n = 1.
-// Far plane at -10, so f = 10.
-
-// 640x480 aspect ratio = 4:3
-
-// The near plane's dimensions are:
-// Width = 8, Height = 6
-// Thus, r = 4, t = 3.
-
-// The perspective projection matrix is thus:
-
-//	1/4	0	0	0
-//	0	1/3	0	0
-//	0	0	-11/9	-20/9
-//	0	0	-1	0
-
-// Clip coordinates:
-// top		(0,	1,	57/9,	7)	wc = 7
-// left		(-3/4,	-1/3,	57/9,	7)	wc = 7
-// right	(3/4,	-1/3,	57/9,	7)	wc = 7
-
-// NDC coordinates:
-// top		(0,	1/7,	57/63)
-// left		(-3/28,	-1/21,	57/63)
-// right	(3/28,	-1/21,	57/63)
-
-// ViewPort size is 640x480
-// ViewPort Centre (320, 240)
-// n = 0.0, f = 1.0 (glDepthRange)
-
-// Flip the sign of the y coordinates, so that the image is right side up on
-// render.
-
-// top		(0,	-1/7,	57/63)
-// left		(-3/28,	1/21,	57/63)
-// right	(3/28,	1/21,	57/63)
-
-// xs = 319.5 * xndc;
-// ys = 239.5 * yndc.
-// zs = 0.5 * zndc + 0.5.
-
-// Screen/Window coordinates relative to the ViewPort Centre:
-// top		(0,		-239.5/7,	60/63);
-// left		(-958.5/28,	239.5/21,	60/63);
-// right	(958.5/28,	239.5/21,	60/63);
-
-// top		(0,		-34.2,		60/63);
-// left		(-34.2,		11.4,		60/63);
-// right	(34.2,		11.4,		60/63);
-//
-// Absolute Screen/Window coordinates relative to the ViewPort Centre:
-// top		(320,		1440.5/7,	60/63);
-// left		(8001.5/28,	5279.5/21,	60/63);
-// right	(9918.5/28,	5279.5/21,	60/63);
-
-// top		(320,		205.8,		60/63);
-// left		(285.8		251.4,		60/63);
-// right	(354.2,		251.4,		60/63);
 
 int d52_run()
 {
@@ -209,10 +96,10 @@ int d52_run()
 		__attribute__((aligned(CACHE_LINE_SIZE)));
 
 	static uint32_t unif[17];
-	static uint32_t cs_out[128][16] __attribute__((aligned(CACHE_LINE_SIZE)));
+	// static uint32_t cs_out[128][16] __attribute__((aligned(CACHE_LINE_SIZE)));
 
 	memcpy(unif, proj_mat, sizeof(proj_mat));
-	unif[16] = va_to_ba((va_t)cs_out);
+	// unif[16] = va_to_ba((va_t)cs_out);
 
 	off = 0;
 	memset(v3dcr, 0, sizeof(v3dcr));
@@ -253,41 +140,48 @@ int d52_run()
 	tbmc->tsda_base = va_to_ba((va_t)tsda);
 	tbmc->width = NUM_TILES_X;
 	tbmc->height = NUM_TILES_Y;
-	tbmc->flags = 4;	// Auto-init tsda. Necessary.
+	tbmc->flags |= bits_on(V3DCR_TBMC_FLAGS_INIT_TSDA);	// Necessary.
 
 	tbs->id = 6;
 
 	sem->id = 7;
 
 	cw->id = 102;
-	cw->width = WIDTH;
-	cw->height = HEIGHT;
+	cw->width = FB_WIDTH;
+	cw->height = FB_HEIGHT;
 
 	cb->id = 96;
-	cb->flags[0] = 5;
+	cb->flags[0] |= bits_on(V3DCR_CFG_FWD_FACE_EN);
+	cb->flags[0] |= bits_on(V3DCR_CFG_CLOCKWISE);
 
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
 	vo->id = 103;
-	vo->x = 320 << 4;	// Centre coordinates.
-	vo->y = 240 << 4;
+	vo->x = (FB_WIDTH / 2) << 4;	// Centre coordinates.
+	vo->y = (FB_HEIGHT / 2) << 4;
 
+	// ViewPort is the entire FrameBuffer, although we do not render the
+	// final row of the tiles when MSAA is not enabled, since the height
+	// of that row is less than 64. To avoid going beyond the FB
+	// boundaries.
 	cxy->id = 105;
-	cxy->half_width = (WIDTH / 2) * 16.0;
-	cxy->half_height = (HEIGHT / 2) * 16.0;
+	cxy->half_width = (FB_WIDTH / 2) * 16.0;
+	cxy->half_height = (FB_HEIGHT / 2) * 16.0;
 
 	ss->id = 64;
 	ss->ssr_base = va_to_ba((va_t)&ssr);
 	ss->ssr_base |= 2;
 
 	va->id = 33;
-	va->mode = 4;
+	va->mode = V3DCR_VERT_ARR_MODE_TRI;
 	va->num_verts = 3;
 
 	f->id = 4;
 
 	memset(&ssr, 0, sizeof(ssr));
-	ssr.flags = 5;
+	ssr.flags |= bits_on(V3DCR_SSR_FLAGS_FS_STHRD);
+	ssr.flags |= bits_on(V3DCR_SSR_FLAGS_CLIP_EN);
+
 	ssr.fs_num_vary = 3;
 	ssr.fs_code_addr = va_to_ba((va_t)fs_code);
 
@@ -355,9 +249,9 @@ int d52_run()
 
 	trmc->id = 113;
 	trmc->tb_base = pa_to_ba(fb_get_pa());
-	trmc->width = WIDTH;
-	trmc->height = HEIGHT;
-	trmc->flags = 4;
+	trmc->width = FB_WIDTH;
+	trmc->height = FB_HEIGHT;
+	trmc->flags |= bits_set(V3DCR_TRMC_FLAGS_FBC_FMT, 1);	//RGBA8888
 
 	// Clear Colours needs an empty write.
 	tc->id = 115;
