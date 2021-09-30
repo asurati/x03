@@ -264,7 +264,7 @@ int d52_run()
 	cw->height = HEIGHT;
 
 	cb->id = 96;
-	cb->flags[0] = 3;
+	cb->flags[0] = 5;
 
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.

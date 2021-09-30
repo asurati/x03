@@ -229,8 +229,18 @@ int d50_run()
 	cw->width = WIDTH;
 	cw->height = HEIGHT;
 
+	// By default, the GPU considers any triangle seen with an
+	// anti-clockwise winding order (CCW) as front facing, but because the
+	// GPU also considers the first byte of the framebuffer as belonging to
+	// the bottom of the screen instead of the top, it has become necessary
+	// to flip the sign of the Y-coordinate in order to render the scene
+	// right side up. That is done within the CS/VS by flipping the sign of
+	// the Y-coordinate within NDC. But then the winding order is opposite
+	// of what was intended. To fix that, tell the GPU that CW is the
+	// front facing winding order, and then enable the front facing
+	// primitives.
 	cb->id = 96;
-	cb->flags[0] = 3;
+	cb->flags[0] = 5;
 
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
