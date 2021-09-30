@@ -175,10 +175,6 @@ int d53_run()
 	vo->x = (FB_WIDTH / 2) << 4;	// Centre coordinates.
 	vo->y = (FB_HEIGHT / 2) << 4;
 
-	// ViewPort is the entire FrameBuffer, although we do not render the
-	// final row of the tiles when MSAA is not enabled, since the height
-	// of that row is less than 64. To avoid going beyond the FB
-	// boundaries.
 	cxy->id = 105;
 	cxy->half_width = (FB_WIDTH / 2) * 16.0;
 	cxy->half_height = (FB_HEIGHT / 2) * 16.0;
