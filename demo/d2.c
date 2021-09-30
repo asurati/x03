@@ -102,9 +102,11 @@ int d2_run()
 		0x00000040, 0xe00208e7, // li	r3, -, 0x40;
 		0x0c9e72c0, 0x10020867, // add	r1, r1, r3;
 		0x0c9c15c0, 0xd00208a7, // addi	r2, r2, 1;
+#if 0
 		0x80104000, 0xe0021c67, // done: li	vdw_setup, -, 0x80104000;
 		0x15800dc0, 0xd0021ca7, // ori	vdw_addr, uni_rd, 0;
 		0x159f2e00, 0x100209e7, // or	-, vdw_wait, r0;
+#endif
 		0x159c1fc0, 0xd00209a7, // ori	host_int, 1, 1;
 		0x009e7000, 0x300009e7, // pe;
 		0x009e7000, 0x100009e7, // ;
@@ -118,7 +120,7 @@ int d2_run()
 
 	unif[0] = va_to_ba((va_t)in_buf);
 	unif[1] = va_to_ba((va_t)out_buf);
-	unif[2] = va_to_ba((va_t)vpm);
+	// unif[2] = va_to_ba((va_t)vpm);
 
 	code_ba = va_to_ba((va_t)code);
 	unif_ba = va_to_ba((va_t)unif);
