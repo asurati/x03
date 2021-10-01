@@ -16,10 +16,6 @@
 #define TILE_WIDTH			64
 #define TILE_HEIGHT			64
 
-// Hope the GPU doesn't write beyond the FB, since the last row of the tiles
-// is less than 64 pixels in height. The ClipWindow and ViewPort configurations
-// should help in avoiding the buffer overflow.
-
 #define NUM_TILES_X			(FB_WIDTH / TILE_WIDTH)
 #define NUM_TILES_Y			(FB_HEIGHT / TILE_HEIGHT + 1)
 
