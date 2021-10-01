@@ -158,7 +158,6 @@ int d53_run()
 
 	sem->id = 7;
 
-	// ClipWindow excludes the last row of the tiles.
 	cw->id = 102;
 	cw->width = FB_WIDTH;
 	cw->height = FB_HEIGHT;
