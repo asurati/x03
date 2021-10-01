@@ -40,9 +40,9 @@ struct vertex {
 
 // The values are lifted up from d50.c.
 static const struct vertex verts[] = {
-	{0,	10,	-4, 1,	 1, 0, 0},
-	{-10,	-10,	-4, 1,	 0, 1, 0},
-	{10,	-10,	-4, 1,	 0, 0, 1},
+	{0,	50,	-4, 1,	 1, 0, 0},
+	{-50,	-50,	-4, 1,	 0, 1, 0},
+	{50,	-50,	-4, 1,	 0, 0, 1},
 };
 
 // The perpsective projection matrix is passed as a uniform. Row-major order.
