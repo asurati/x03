@@ -37,24 +37,23 @@ struct vertex {
 	float				b;
 } __attribute__((packed));
 
-// The smaller, white triangle is behind the first, larger triangle. Even so,
-// the white triangle is rendered. With Z-testing disabled, the order of the
-// triangle dictates the drawing. Here, the larger triangle is drawn first,
-// and then the smaller, so the smaller is rendered on the screen even
-// though it is behind the larger triangle.
+// The smaller triangle is in front of the larger, from the PoV of the camera.
+// Even so, with the depth-testing disabled, the rendering order is
+// smaller-then-larger. As a result, the larger triangle completely obstructs
+// and hides the smaller triangle.
 //
-// With the Z-testing enabled, the rendering is correct, regardless of the
-// order in which the triangles are presented here.
+// With the depth-testing enabled, the rendering is correct, regardless of the
+// order in which the triangles are presented.
 
 // The values lifted up from d50.
 static const struct vertex verts[] = {
-	{0,	50,	-4, 1,	 1, 0, 0},
-	{-50,	-50,	-4, 1,	 0, 1, 0},
-	{50,	-50,	-4, 1,	 0, 0, 1},
-
 	{0,	30,	-3.5,	1, 1, 1, 1},
 	{-30,	-30,	-3.5,	1, 1, 1, 1},
 	{30,	-30,	-3.5,	1, 1, 1, 1},
+
+	{0,	50,	-4, 1,	 1, 0, 0},
+	{-50,	-50,	-4, 1,	 0, 1, 0},
+	{50,	-50,	-4, 1,	 0, 0, 1},
 };
 
 // The perpsective projection matrix is passed as a uniform. Row-major order.
