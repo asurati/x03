@@ -268,8 +268,10 @@ struct v3dcr_clear_colours {
 
 #define V3DCR_TRMC_FLAGS_MSAA_POS	0
 #define V3DCR_TRMC_FLAGS_FBC_FMT_POS	2
+#define V3DCR_TRMC_FLAGS_DEC_MODE_POS	4
 #define V3DCR_TRMC_FLAGS_MSAA_BITS	1
 #define V3DCR_TRMC_FLAGS_FBC_FMT_BITS	2
+#define V3DCR_TRMC_FLAGS_DEC_MODE_BITS	2
 
 struct v3dcr_tile_rendering_mode {
 	uint8_t				id;		// 113
