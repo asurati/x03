@@ -45,9 +45,9 @@ li	r3, -, 0xff000000;	# alpha (= 8d)
 # byte with saturation, and place them at appropriate locations depending on
 # the framebuffer format. The format is 0x8d8c8b8a, corresponding to
 # 0xaarrggbb.
-fmuli	r0, r0, 1f	pm8c;
-fmuli	r0, r1, 1f	pm8b;
-fmuli	r0, r2, 1f	pm8a;
+fmuli	r3, r0, 1f	pm8c;
+fmuli	r3, r1, 1f	pm8b;
+fmuli	r3, r2, 1f	pm8a;
 
 or	tlb_clr_all, r3, r3	usb;
 
