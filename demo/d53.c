@@ -10,20 +10,20 @@
 #include <dev/v3d.h>
 #include <dev/con.h>
 
-// Reuse the d52 CS and VS.
+// Reuse from d52.
 #include "d52.cs.h"
 #include "d52.vs.h"
-
-#include "d53.fs.h"
+#include "d52.fs.h"
 
 #define FB_WIDTH			640
 #define FB_HEIGHT			480
 
-#define TILE_WIDTH			64
-#define TILE_HEIGHT			64
+// MSAA 4x changes the tile width from 64x64 to 32x32
+#define TILE_WIDTH			32
+#define TILE_HEIGHT			32
 
 #define NUM_TILES_X			(FB_WIDTH / TILE_WIDTH)
-#define NUM_TILES_Y			(FB_HEIGHT / TILE_HEIGHT + 1)
+#define NUM_TILES_Y			(FB_HEIGHT / TILE_HEIGHT)
 
 // For some ease, provide the eye/view coordinates as input to the cs and vs,
 // instead of the object coordinates.
@@ -37,20 +37,8 @@ struct vertex {
 	float				b;
 } __attribute__((packed));
 
-// The smaller triangle is in front of the larger, from the PoV of the camera.
-// Even so, with the depth-testing disabled, the rendering order is
-// smaller-then-larger. As a result, the larger triangle completely obstructs
-// and hides the smaller triangle.
-//
-// With the depth-testing enabled, the rendering is correct, regardless of the
-// order in which the triangles are presented.
-
-// The values lifted up from d50.
+// The values are lifted up from d50.c.
 static const struct vertex verts[] = {
-	{0,	30,	-3.5,	1, 1, 1, 1},
-	{-30,	-30,	-3.5,	1, 1, 1, 1},
-	{30,	-30,	-3.5,	1, 1, 1, 1},
-
 	{0,	50,	-4, 1,	 1, 0, 0},
 	{-50,	-50,	-4, 1,	 0, 1, 0},
 	{50,	-50,	-4, 1,	 0, 0, 1},
@@ -100,11 +88,11 @@ int d53_run()
 	// BPCA/BPCS.
 	static uint32_t ta[PAGE_SIZE >> 2] __attribute__((aligned(256)));
 
-	// Alignment enforced by NVSS/64.
+	// Alignment enforced by GLSS/64.
 	static struct v3dcr_gl_shader_state_rec ssr
 		__attribute__((aligned(CACHE_LINE_SIZE)));
 
-	static uint32_t unif[17];
+	static uint32_t unif[16];
 
 	memcpy(unif, proj_mat, sizeof(proj_mat));
 
@@ -148,6 +136,7 @@ int d53_run()
 	tbmc->width = NUM_TILES_X;
 	tbmc->height = NUM_TILES_Y;
 	tbmc->flags |= bits_on(V3DCR_TBMC_FLAGS_INIT_TSDA);	// Necessary.
+	tbmc->flags |= bits_on(V3DCR_TBMC_FLAGS_MSAA);
 
 	tbs->id = 6;
 
@@ -160,8 +149,7 @@ int d53_run()
 	cb->id = 96;
 	cb->flags[0] |= bits_on(V3DCR_CFG_FWD_FACE_EN);
 	cb->flags[0] |= bits_on(V3DCR_CFG_CLOCKWISE);
-	cb->flags[1] |= bits_on(V3DCR_CFG_Z_UPDATE_EN);
-	cb->flags[1] |= bits_set(V3DCR_CFG_Z_TEST_FN, 1);	// LessThan.
+	cb->flags[0] |= bits_set(V3DCR_CFG_OVERSAMPLE, 1);
 
 	// The viewport offset coordinates are in signed 12.4 fixed point
 	// format.
@@ -179,7 +167,7 @@ int d53_run()
 
 	va->id = 33;
 	va->mode = V3DCR_VERT_ARR_MODE_TRI;
-	va->num_verts = 6;
+	va->num_verts = 3;
 
 	f->id = 4;
 
@@ -238,13 +226,13 @@ int d53_run()
 	// even and odd??
 	cc->colour[0] = 0xffffff00;	// ARGB32
 	cc->colour[1] = 0xffffff00;	// ARGB32
-	cc->mask = 0xffffff;		// Z value == 1.0
 
 	trmc->id = 113;
 	trmc->tb_base = pa_to_ba(fb_get_pa());
 	trmc->width = FB_WIDTH;
 	trmc->height = FB_HEIGHT;
 	trmc->flags |= bits_set(V3DCR_TRMC_FLAGS_FBC_FMT, 1);	//RGBA8888
+	trmc->flags |= bits_on(V3DCR_TRMC_FLAGS_MSAA);
 
 	// Clear Colours needs an empty write.
 	tc->id = 115;
