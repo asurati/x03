@@ -123,7 +123,7 @@ int d51_run()
 	};
 
 	static const uint32_t vs_code[] __attribute__((aligned(8))) = {
-		0x00601a00, 0xe0020c67, // li	vpr_setup, -, 0x301a00;
+		0x00601a00, 0xe0020c67, // li	vpr_setup, -, 0x601a00;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
 		0x009e7000, 0x100009e7, // ;
