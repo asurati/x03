@@ -24,7 +24,8 @@ volatile uint32_t *fb_get()
 	return g_fb;
 }
 
-int fb_dump()
+// Run length encoding.
+void rle_dump(volatile uint32_t *fb, int width, int height)
 {
 	int i, count[8], l;
 	uint32_t val[8], t;
@@ -33,13 +34,11 @@ int fb_dump()
 		"{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d},"
 		"{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d}," "{0x%x,%d},";
 
-	// Run length encoding.
-
 	l = 0;
-	val[l] = g_fb[0];
+	val[l] = fb[0];
 	count[l] = 1;
-	for (i = 1; i < 640 * 480; ++i) {
-		t = g_fb[i];
+	for (i = 1; i < width * height; ++i) {
+		t = fb[i];
 		if (t == val[l]) {
 			++count[l];
 			continue;
@@ -60,6 +59,11 @@ int fb_dump()
 
 	for (i = 0; i <= l; ++i)
 		con_out("{0x%x,%d},", val[i], count[i]);
+}
+
+int fb_dump()
+{
+	rle_dump(g_fb, 640, 480);
 	return ERR_SUCCESS;
 }
 
