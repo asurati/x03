@@ -97,24 +97,20 @@ uint32_t mmu_get_flags(int flags, char is_sn, char is_ssn, pa_t pa)
 static
 void mmu_init_map_sys(va_t *sys_end)
 {
-	int ix, i, j, k, num_pages, flags;
+	int ix, i, j, k, num_pages, flags, pd1_ix;
 	va_t se, va;
-	pa_t pa;
+	pa_t pa, pd1_pa;
 	uint32_t val, memsz, prop;
+	pde_t *pd1_hw;
 	struct elf32_hdr *eh;
 	struct elf32_phdr *ph;
 	// PD1 for the system area.
-	static pde_t pd1_hw[PD1_SIZE >> 2]
+	static pde_t pd1_hw_arr[32][PD1_SIZE >> 2]
 		__attribute__((aligned(PD1_SIZE))) = {0};
 
 	// VA_BASE is a 512MB region. Thus it needs a total of 512 PD0
 	// entries, and so 512 possible PD1s.
-	ix = bits_get(SYS_BASE, PD0);
-	val = 0;
-	val |= bits_on(PDE_T);
-	val |= bits_push(PDE_NLTA, va_to_pa((va_t)pd1_hw));
-	g_pd0_hw[ix] = val;
-
+	pd1_ix = 0;
 	se = *sys_end;
 	eh = (struct elf32_hdr *)SYS_BASE;
 	ph = (struct elf32_phdr *)((char *)eh + eh->phoff);
@@ -136,8 +132,20 @@ void mmu_init_map_sys(va_t *sys_end)
 		prop = mmu_get_flags(flags, 0, 0, 0);
 		for (j = 0; j < num_pages; ++j) {
 			ix = bits_get(va, PD0);
-			// We should not need another PD1.
-			assert(g_pd0_hw[ix]);
+			val = g_pd0_hw[ix];
+			if (val == 0) {
+				// Support 32 PD1s max, atm.
+				assert(pd1_ix < 32);
+				pd1_hw = pd1_hw_arr[pd1_ix];
+				pd1_pa = va_to_pa((va_t)pd1_hw);
+				val |= bits_on(PDE_T);
+				val |= bits_push(PDE_NLTA, pd1_pa);
+				g_pd0_hw[ix] = val;
+				++pd1_ix;
+			} else {
+				pd1_pa = bits_pull(val, PDE_NLTA);
+				pd1_hw = (pde_t *)pa_to_va(pd1_pa);
+			}
 
 			ix = bits_get(va, PD1) & (~0xf);
 			val = prop;
