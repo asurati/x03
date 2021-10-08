@@ -34,6 +34,8 @@ int kmain()
 	int	mbox_init();
 	int	fb_init();
 	int	v3d_init();
+	int	hvs_init();
+	int	txp_init();
 	int	demo_run();
 
 	sys_end = (va_t)&_sys_end;
@@ -92,6 +94,14 @@ int kmain()
 		return err;
 
 	err = v3d_init();
+	if (err)
+		return err;
+
+	err = hvs_init();
+	if (err)
+		return err;
+
+	err = txp_init();
 	if (err)
 		return err;
 
