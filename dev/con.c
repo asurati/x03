@@ -12,6 +12,8 @@
 #include <sys/vmm.h>
 #include <sys/spinlock.h>
 
+#include <dev/dev.h>
+
 #define CON_BUF_LEN			256
 
 #define CON_DR				(0 >> 2)
@@ -67,28 +69,13 @@ int con_out(const char *fmt, ...)
 int con_init()
 {
 	int err;
-	pa_t pa;
 	va_t va;
-	vpn_t page;
-	pfn_t frame;
 
 	spin_lock_init(&g_con_lock, IPL_HARD);
-
-	pa = UART_BASE;
-	frame = pa_to_pfn(pa);
-	err = vmm_alloc(ALIGN_PAGE, 1, &page);
+	err = dev_map_io(UART_BASE, 0x200, &va);
 	if (err)
-		goto err0;
-	err = mmu_map_page(0, page, frame, ALIGN_PAGE, PROT_RW | ATTR_IO);
-	if (err)
-		goto err1;
-	va = vpn_to_va(page);
-	va += pa & (PAGE_SIZE - 1);
+		return err;
 	g_con_regs = (volatile uint32_t *)va;
 	g_con_init = 1;
 	return ERR_SUCCESS;
-err1:
-	vmm_free(page, 1);
-err0:
-	return err;
 }

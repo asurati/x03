@@ -9,6 +9,7 @@
 #include <sys/vmm.h>
 #include <sys/cpu.h>
 
+#include <dev/dev.h>
 #include <dev/con.h>
 
 int	slabs_va_to_pa(void *va, pa_t *pa);
@@ -306,25 +307,11 @@ err0:
 int mbox_init()
 {
 	int err;
-	pa_t pa;
 	va_t va;
-	vpn_t page;
-	pfn_t frame;
 
-	pa = MBOX_BASE;
-	frame = pa_to_pfn(pa);
-	err = vmm_alloc(ALIGN_PAGE, 1, &page);
+	err = dev_map_io(MBOX_BASE, 0x40, &va);
 	if (err)
-		goto err0;
-	err = mmu_map_page(0, page, frame, ALIGN_PAGE, PROT_RW | ATTR_IO);
-	if (err)
-		goto err1;
-	va = vpn_to_va(page);
-	va += pa & (PAGE_SIZE - 1);
+		return err;
 	g_mbox = (volatile struct mbox *)va;
 	return ERR_SUCCESS;
-err1:
-	vmm_free(page, 1);
-err0:
-	return err;
 }

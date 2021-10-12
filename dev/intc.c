@@ -9,6 +9,8 @@
 #include <sys/vmm.h>
 #include <sys/pmm.h>
 
+#include <dev/dev.h>
+
 #define INTC_IRQ0_PENDING		(0 >> 2)
 #define INTC_IRQ1_PENDING		(0x4 >> 2)
 #define INTC_IRQ2_PENDING		(0x8 >> 2)
@@ -55,22 +57,11 @@ static struct irq_info g_irqs[NUM_IRQS] = {
 int intc_init()
 {
 	int err;
-	pa_t pa;
 	va_t va;
-	vpn_t page;
-	pfn_t frame;
 
-	pa = INTC_BASE;
-
-	err = vmm_alloc(ALIGN_PAGE, 1, &page);
+	err = dev_map_io(INTC_BASE, 0x200, &va);
 	if (err)
-		goto err0;
-	frame = pa_to_pfn(pa);
-	err = mmu_map_page(0, page, frame, ALIGN_PAGE, PROT_RW | ATTR_IO);
-	if (err)
-		goto err1;
-	va = vpn_to_va(page);
-	va += pa & (PAGE_SIZE - 1);
+		return err;
 	g_intc_regs = (volatile uint32_t *)va;
 
 	// Disable FIQ generation.
@@ -81,10 +72,6 @@ int intc_init()
 	g_intc_regs[INTC_IRQ1_DISABLE] = -1;
 	g_intc_regs[INTC_IRQ2_DISABLE] = -1;
 	return ERR_SUCCESS;
-err1:
-	vmm_free(page, 1);
-err0:
-	return err;
 }
 
 static

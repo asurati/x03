@@ -8,6 +8,7 @@
 #include <sys/cpu.h>
 #include <sys/vmm.h>
 
+#include <dev/dev.h>
 #include <dev/con.h>
 #include <dev/mbox.h>
 #include <dev/v3d.h>
@@ -112,30 +113,21 @@ void v3d_run_binner(ba_t cr, size_t size)
 int v3d_init()
 {
 	int err;
-	pa_t pa;
 	va_t va;
-	vpn_t page;
-	pfn_t frame;
 
 	err = mbox_set_dom_state(11, 1);
 	if (err)
 		goto err0;
 
-	pa = V3D_BASE;
-	frame = pa_to_pfn(pa);
-	err = vmm_alloc(ALIGN_PAGE, 1, &page);
-	if (err)
-		goto err0;
-	err = mmu_map_page(0, page, frame, ALIGN_PAGE, PROT_RW | ATTR_IO);
+	err = dev_map_io(V3D_BASE, 0x1000, &va);
 	if (err)
 		goto err1;
-	va = vpn_to_va(page);
-	va += pa & (PAGE_SIZE - 1);
+
 	g_v3d_regs = (volatile uint32_t *)va;
 
 	err = ERR_INVALID;
 	if (g_v3d_regs[V3D_IDENT0] != 0x2443356)
-		goto err2;
+		goto err1;
 
 	cpu_register_irqh(IRQ_VC_3D, v3d_hw_irqh, NULL);
 
@@ -157,10 +149,12 @@ int v3d_init()
 
 	cpu_enable_irq(IRQ_VC_3D);
 	return ERR_SUCCESS;
+#if 0
 err2:
-	mmu_unmap_page(0, page);
+	dev_unmap_io(va, 0x1000);
+#endif
 err1:
-	vmm_free(page, 1);
+	mbox_set_dom_state(11, 0);
 err0:
 	return err;
 }
