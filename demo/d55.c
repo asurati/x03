@@ -323,24 +323,24 @@ void d55_run_txp(const uint32_t *fb)
 	// The input FB (fb) has the format BGRA8888, or  ARGB32.
 	// The output FB (out_fb) is expected to be in the same format.
 	val = 0;
-	val |= bits_set(HVS_DL_CTL0_PIXEL_FMT, 7);	// RGBA8888
-	val |= bits_set(HVS_DL_CTL0_PIXEL_ORDER, 3);
-	val |= bits_set(HVS_DL_CTL0_RGBA_EXPAND, 3);	// Round??
-	val |= bits_on(HVS_DL_CTL0_VALID);
-	val |= bits_set(HVS_DL_CTL0_NUM_WORDS, 14);	// 14 + End.
+	val |= bits_set(HVS_DLW_CTL0_PIXEL_FMT, 7);	// RGBA8888
+	val |= bits_set(HVS_DLW_CTL0_PIXEL_ORDER, 3);
+	val |= bits_set(HVS_DLW_CTL0_RGBA_EXPAND, 3);	// Round??
+	val |= bits_on(HVS_DLW_CTL0_VALID);
+	val |= bits_set(HVS_DLW_CTL0_NUM_WORDS, 14);	// 14 + End.
 	dl[0] = val;
 
-	dl[1] = bits_on(HVS_DL_POS0_FIXED_ALPHA);	// 0xff
+	dl[1] = bits_on(HVS_DLW_POS0_FIXED_ALPHA);	// 0xff
 
 	val = 0;
-	val |= bits_set(HVS_DL_POS1_SCL_WIDTH, SCL_FB_WIDTH);
-	val |= bits_set(HVS_DL_POS1_SCL_HEIGHT, SCL_FB_HEIGHT);
+	val |= bits_set(HVS_DLW_POS1_SCL_WIDTH, SCL_FB_WIDTH);
+	val |= bits_set(HVS_DLW_POS1_SCL_HEIGHT, SCL_FB_HEIGHT);
 	dl[2] = val;
 
 	val = 0;
-	val |= bits_set(HVS_DL_POS2_SRC_WIDTH, FB_WIDTH);
-	val |= bits_set(HVS_DL_POS2_SRC_HEIGHT, FB_HEIGHT);
-	val |= bits_set(HVS_DL_POS2_ALPHA_MODE, 1);	// Fixed Alpha.
+	val |= bits_set(HVS_DLW_POS2_SRC_WIDTH, FB_WIDTH);
+	val |= bits_set(HVS_DLW_POS2_SRC_HEIGHT, FB_HEIGHT);
+	val |= bits_set(HVS_DLW_POS2_ALPHA_MODE, 1);	// Fixed Alpha.
 	dl[3] = val;
 	dl[4] = 0;
 
@@ -350,23 +350,23 @@ void d55_run_txp(const uint32_t *fb)
 	dl[8] = 0x2000;		// LBM base address. Random atm.
 
 	val = 0;
-	val |= bits_set(HVS_DL_PPF_IPHASE, 0x60);	// From firmware.
-	val |= bits_set(HVS_DL_PPF_SCALE,
+	val |= bits_set(HVS_DLW_PPF_IPHASE, 0x60);	// From firmware.
+	val |= bits_set(HVS_DLW_PPF_SCALE,
 			(1ul << 16) * FB_WIDTH / SCL_FB_WIDTH);
-	val |= bits_on(HVS_DL_PPF_AGC);
+	val |= bits_on(HVS_DLW_PPF_AGC);
 	dl[9] = val;
 
 	val = 0;
-	val |= bits_set(HVS_DL_PPF_IPHASE, 0x60);	// From firmware.
-	val |= bits_set(HVS_DL_PPF_SCALE,
+	val |= bits_set(HVS_DLW_PPF_IPHASE, 0x60);	// From firmware.
+	val |= bits_set(HVS_DLW_PPF_SCALE,
 			(1ul << 16) * FB_HEIGHT / SCL_FB_HEIGHT);
-	val |= bits_on(HVS_DL_PPF_AGC);
+	val |= bits_on(HVS_DLW_PPF_AGC);
 	dl[10] = val;
 	dl[11] = 0;
 
 	dl[12] = HVS_DL_PPFK_INDEX;// H Scaling kernel for Plane0 (RGB, or Y)
 	dl[13] = HVS_DL_PPFK_INDEX;// V Scaling kernel for Plane0 (RGB, or Y)
-	dl[14] = bits_on(HVS_DL_CTL0_END);
+	dl[14] = bits_on(HVS_DLW_CTL0_END);
 
 	g_hvs_regs[HVS_DL2] = HVS_DL_INDEX;
 
