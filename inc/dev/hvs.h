@@ -6,16 +6,21 @@
 
 #include <sys/bits.h>
 
+#define HVS_DL0				(0x20 >> 2)
+#define HVS_DL1				(0x24 >> 2)
 #define HVS_DL2				(0x28 >> 2)
+#define HVS_DL1_CTRL			(0x50 >> 2)
 #define HVS_DL2_CTRL			(0x60 >> 2)
 
 #define HVS_DL_CTRL_HEIGHT_POS		0
 #define HVS_DL_CTRL_WIDTH_POS		12
 #define HVS_DL_CTRL_ONESHOT_POS		29
+#define HVS_DL_CTRL_RESET_POS		30
 #define HVS_DL_CTRL_EN_POS		31
 #define HVS_DL_CTRL_HEIGHT_BITS		12
 #define HVS_DL_CTRL_WIDTH_BITS		12
 #define HVS_DL_CTRL_ONESHOT_BITS	1
+#define HVS_DL_CTRL_RESET_BITS		1
 #define HVS_DL_CTRL_EN_BITS		1
 
 #define HVS_DLW_CTL0_PIXEL_FMT_POS	0
