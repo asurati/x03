@@ -109,6 +109,12 @@ typedef int32_t				pfn_t;
 #define TIMER_BASE			(IO_BASE + 0x3000)
 #define HVS_BASE			(IO_BASE + 0x400000)
 #define TXP_BASE			(IO_BASE + 0x4000)
+#define PV1_BASE			(IO_BASE + 0x207000)
+#define PV2_BASE			(IO_BASE + 0x807000)
+#define HDMI_BASE			(IO_BASE + 0x902000)
+#define HD_BASE				(IO_BASE + 0x808000)
+#define CM_BASE				(IO_BASE + 0x101000)
+#define DDC_BASE			(IO_BASE + 0x805000)
 
 #define PAGE_SIZE			(1ul << PAGE_SIZE_BITS)
 
