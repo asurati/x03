@@ -19,11 +19,6 @@ pa_t fb_get_pa()
 	return g_fb_base;
 }
 
-volatile uint32_t *fb_get()
-{
-	return g_fb;
-}
-
 // Run length encoding.
 void rle_dump(volatile uint32_t *fb, int width, int height)
 {
