@@ -31,8 +31,6 @@ volatile uint32_t *g_hdmi_regs;
 volatile uint32_t *g_hd_regs;
 volatile uint32_t *g_ddc_regs;
 
-#define _1MB				(1024ul * 1024)
-
 static pa_t g_fb_pa;
 
 // Display Mode
@@ -627,72 +625,13 @@ void dump_regs()
 }
 #endif
 
-// PV2 drives the HDMI encoder.
-int disp_config()
-{
-	pv_disable_video();
-	hdmi_disable_video();
-	pv_disable();
-	hvs_disable_channel();
-	hdmi_disable();
-
-	hvs_enable_channel();
-	hdmi_enable();
-	pv_enable();
-	hdmi_enable_csc_fifo();
-	pv_enable_video();
-	hdmi_enable_video();
-	return ERR_SUCCESS;
-}
-
-// IPL_THREAD
-int disp_init()
+static
+int disp_alloc_fb()
 {
 	volatile uint32_t *fb;
 	int err, i, num_pages;
-	va_t va;
 	vpn_t pages, page;
 	pfn_t frames, frame;
-
-	err = dev_map_io(HVS_BASE, 0x6000, &va);
-	if (err)
-		return err;
-	g_hvs_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(TXP_BASE, 0x20, &va);
-	if (err)
-		return err;
-	g_txp_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(PV1_BASE, 0x100, &va);
-	if (err)
-		return err;
-	g_pv1_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(PV2_BASE, 0x100, &va);
-	if (err)
-		return err;
-	g_pv2_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(HDMI_BASE, 0x600, &va);
-	if (err)
-		return err;
-	g_hdmi_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(HD_BASE, 0x100, &va);
-	if (err)
-		return err;
-	g_hd_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(CM_BASE, 0x2000, &va);
-	if (err)
-		return err;
-	g_cm_regs = (volatile uint32_t *)va;
-
-	err = dev_map_io(DDC_BASE, 0x1000, &va);
-	if (err)
-		return err;
-	g_ddc_regs = (volatile uint32_t *)va;
 
 	// Allocate 8MB of system RAM for a single frame buffer.
 	// 1920*1080*4 = 8294400 < 8MB.
@@ -748,4 +687,76 @@ err1:
 	pmm_free(frames, num_pages);
 err0:
 	return err;
+}
+
+// PV2 drives the HDMI encoder.
+int disp_config()
+{
+	int err;
+
+	err = disp_alloc_fb();
+	if (err)
+		return err;
+
+	pv_disable_video();
+	hdmi_disable_video();
+	pv_disable();
+	hvs_disable_channel();
+	hdmi_disable();
+
+	hvs_enable_channel();
+	hdmi_enable();
+	pv_enable();
+	hdmi_enable_csc_fifo();
+	pv_enable_video();
+	hdmi_enable_video();
+	return ERR_SUCCESS;
+}
+
+// IPL_THREAD
+int disp_init()
+{
+	int err;
+	va_t va;
+
+	err = dev_map_io(HVS_BASE, 0x6000, &va);
+	if (err)
+		return err;
+	g_hvs_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(TXP_BASE, 0x20, &va);
+	if (err)
+		return err;
+	g_txp_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(PV1_BASE, 0x100, &va);
+	if (err)
+		return err;
+	g_pv1_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(PV2_BASE, 0x100, &va);
+	if (err)
+		return err;
+	g_pv2_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(HDMI_BASE, 0x600, &va);
+	if (err)
+		return err;
+	g_hdmi_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(HD_BASE, 0x100, &va);
+	if (err)
+		return err;
+	g_hd_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(CM_BASE, 0x2000, &va);
+	if (err)
+		return err;
+	g_cm_regs = (volatile uint32_t *)va;
+
+	err = dev_map_io(DDC_BASE, 0x1000, &va);
+	if (err)
+		return err;
+	g_ddc_regs = (volatile uint32_t *)va;
+	return ERR_SUCCESS;
 }
