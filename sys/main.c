@@ -36,7 +36,7 @@ int kmain()
 	int	disp_config();
 	int	fb_init();
 	int	v3d_init();
-	int	demo_run();
+	int	demo_run(int phase);
 
 	sys_end = (va_t)&_sys_end;
 	sys_end = align_up(sys_end, 3);
@@ -89,15 +89,6 @@ int kmain()
 		return err;
 	con_out("rev %x", rev);
 
-	err = disp_init();
-	if (err)
-		return err;
-
-	err = disp_config();
-	if (err)
-		return err;
-	goto err;
-
 	err = fb_init();
 	if (err)
 		return err;
@@ -106,7 +97,15 @@ int kmain()
 	if (err)
 		return err;
 
-	err = demo_run();
+	err = disp_init();
+	if (err)
+		return err;
+
+	err = demo_run(0);
+	if (err)
+		return err;
+
+	err = disp_config();
 	if (err)
 		return err;
 err:

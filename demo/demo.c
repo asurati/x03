@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2021 Amol Surati
 
+#include <sys/err.h>
+
 #include <dev/con.h>
 
-int demo_run()
+typedef int (*fn_demo_run)();
+int demo0_run()
 {
-	typedef int (*fn_demo_run)();
 	int err, i;
 	int	d1_run();
 	int	d2_run();
@@ -35,4 +37,14 @@ int demo_run()
 			break;
 	}
 	return err;
+}
+
+int demo_run(int phase)
+{
+	// Phase 0: The display pipeline is setup by the firmware
+	// Phase 1 and beyond: The display pipeline is setup by us.
+	switch (phase) {
+	case 0: return demo0_run();
+	default: return ERR_PARAM;
+	}
 }
