@@ -32,22 +32,22 @@ volatile uint32_t *g_ddc_regs;
 
 // Display Mode
 struct mode {
-	uint32_t			hap;
-	uint32_t			hfp;
-	uint32_t			hsw;
-	uint32_t			hbp;
-	uint32_t			val;
-	uint32_t			vfp;
-	uint32_t			vsw;
-	uint32_t			vbp;
+	uint32_t			hap;	// Active Pixels
+	uint32_t			hfp;	// Front Porch
+	uint32_t			hsw;	// HSync Width
+	uint32_t			hbp;	// Back Porch
+	uint32_t			val;	// Active Lines
+	uint32_t			vfp;	// Front Porch
+	uint32_t			vsw;	// VSync Width
+	uint32_t			vbp;	// Back Porch
 
-	int				hsp;
-	int				vsp;
-	int				vic;
+	int				hsp;	// HSync Polarity
+	int				vsp;	// VSync Polarity
+	int				vic;	// CEA Video ID Code.
 
-	int				pllh_ndiv;
-	int				pllh_fdiv;
-	int				pllh_pix_div;
+	int				pllh_ndiv;	// Integer divisor.
+	int				pllh_fdiv;	// Fractional divisor.
+	int				pllh_pix_div;	// Integer divisor.
 };
 
 static int g_mode = 2;
