@@ -124,6 +124,8 @@ enum align_bits {
 	ALIGN_16MB			= 24,
 };
 
+#define _1MB				(1ul << ALIGN_1MB)
+
 #define PROT_R				PF_R
 #define PROT_W				PF_W
 #define PROT_X				PF_X
